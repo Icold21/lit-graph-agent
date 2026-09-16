@@ -4,23 +4,24 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Obsidian Ready](https://img.shields.io/badge/Obsidian-Knowledge%20Graph-purple.svg)](https://obsidian.md/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Tests: Pytest](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/astral-sh/ruff)
 
-> **Autonomous Literature Research Agent that turns unorganized papers and web sources into structured, interactive Obsidian Knowledge Graphs with scientometric ranking and publication-ready bibliographies.**
+> **Autonomous Literature Research Agent that turns raw papers, preprints, and web sources into structured, interactive Obsidian Knowledge Graphs with scientometric ranking, Elbow-method cutoff, and publication-ready bibliographies.**
 
 ---
 
 ## 🌟 Key Features
 
-- 🔍 **Adaptive Search Loop:** Automatically crawls academic engines (**arXiv**, **Semantic Scholar**) and web sources, generating iterative sub-queries until the target paper count is reached.
-- 🛡️ **3-Stage Scientific Validation:** Evaluates candidates for topic relevance, strict constraints (publication year, peer-review venue, methodology), and novelty/redundancy.
-- 📐 **Scientometric Ranking & Elbow Cutoff:** Uses citation velocity ($V = \frac{C}{\text{Age}}$) and influential citation ratio ($R_{inf}$), applying the **Elbow / Kneedle Method** to mathematically discard low-impact papers.
-- 🕸️ **Obsidian Knowledge Graph Native:** Creates atomic literature notes linked by bidirectional `[[wikilinks]]`, concept hubs, and cross-citation networks (`cites` / `cited_by`).
-- 📄 **Dual-Layer Master Bibliography:**
-  - `Formatted_Bibliography.md`: Clean, copy-paste ready literature list formatted strictly according to your target standard (**APA 7th, IEEE, Harvard, BibTeX, GOST**).
-  - `_Bibliography.md`: Interactive Obsidian hub linked to local vault notes.
-  - `references.bib`: Generated automatically when BibTeX is selected for LaTeX / Overleaf / Zotero workflows.
-- 🔌 **Universal Model-Agnostic Engine:** Seamlessly switch between **Local Ollama** (Qwen 2.5, Llama 3.2), **DeepSeek**, **Groq**, **OpenAI**, or **OpenRouter** via `.env` without modifying Python code.
-- ⚡ **Incremental Updates:** Expand existing research vaults with targeted directives without overwriting existing notes.
+- 🔍 **Iterative Adaptive Search Loop:** Recursively crawls **arXiv** and **Semantic Scholar** (with web fallback), dynamically generating targeted sub-queries until the desired paper quota is fulfilled.
+- ⚡ **Optimized Fast Validation:** Consolidated single-round LLM auditing (evaluates topic relevance + strict constraints in one pass), providing 5x speedups for local models like **Qwen 2.5 (3B)**.
+- 📐 **Scientometric Ranking & Elbow Cutoff:** Ranks candidates by citation velocity ($V = \frac{C}{\text{Age}}$), influential citation ratio ($R_{inf}$), and log-scaled impact, applying the **Elbow / Kneedle Algorithm** to prune low-impact tails while respecting user-defined bounds (`MIN_PAPERS` to `MAX_PAPERS`).
+- 🕸️ **Obsidian Knowledge Graph Native:** Creates atomic Markdown notes linked via bidirectional `[[wikilinks]]`, concept hub clusters, and cross-citation networks (`cites` / `cited_by`).
+- 📄 **Publication-Ready Dual Bibliography:**
+  - `Formatted_Bibliography.md`: Clean, standardized reference list formatted strictly according to your target standard (**APA 7th, IEEE, Harvard, BibTeX, GOST**) — ready for direct copy-pasting into theses or journal manuscripts.
+  - `_Bibliography.md`: Interactive Obsidian master note with direct links to vault source notes.
+  - `references.bib`: Generated automatically when BibTeX format is selected for **LaTeX / Overleaf / Zotero** workflows.
+- 🔌 **Universal Model-Agnostic Engine:** Switch seamlessly between **Local Ollama** (Qwen 2.5, Llama 3.2), **DeepSeek**, **Groq**, **OpenAI**, or **OpenRouter** strictly via `.env` without modifying a single line of Python code.
+- 🔄 **Incremental Graph Mutations:** Update and expand existing research bases with targeted sub-directives without overwriting untouched notes.
 
 ---
 
@@ -34,12 +35,12 @@
                                │
                 ┌──────────────▼──────────────┐
                 │   Adaptive Search Engine    │◄───┐ (Iterative sub-queries
-                │  (arXiv + S2 + Web Scraper) │    │  if candidates < target)
+                │  (arXiv + S2 + Web Scraper) │    │  until target quota)
                 └──────────────┬──────────────┘    │
                                │                   │
                 ┌──────────────▼──────────────┐    │
-                │ 3-Stage Consolidated LLM    │────┘
-                │ Validation (Topic + Rules)  │
+                │ Consolidated LLM Validation │────┘
+                │  (Topic + Strict Criteria)  │
                 └──────────────┬──────────────┘
                                │
                 ┌──────────────▼──────────────┐
@@ -49,13 +50,13 @@
                                │
                 ┌──────────────▼──────────────┐
                 │  Citation Graph Expansion   │
-                │   & Synthesis in English    │
+                │   & English Synthesis       │
                 └──────────────┬──────────────┘
                                │
         ┌──────────────────────▼──────────────────────┐
         │          Obsidian Knowledge Vault           │
+        │  ├── Formatted_Bibliography.md (Clean copy) │
         │  ├── _Overview_Synthesis.md                 │
-        │  ├── Formatted_Bibliography.md              │
         │  ├── _Bibliography.md (references.bib)      │
         │  ├── Sources/ (Atomic Literature Notes)     │
         │  └── Concepts/ (Concept Graph Hubs)         │
@@ -68,20 +69,22 @@
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/lit-graph-agent.git
-cd lit-graph-agent
+git clone https://github.com/Icold21/LitGraphAgent.git
+cd LitGraphAgent
 ```
 
-### 2. Set up virtual environment
+### 2. Set up a virtual environment
 ```bash
 python -m venv .venv
+
 # On Windows:
 .venv\Scripts\activate
+
 # On macOS / Linux:
 source .venv/bin/activate
 ```
 
-### 3. Install in editable mode
+### 3. Install in development mode
 ```bash
 pip install -e .
 ```
@@ -108,14 +111,14 @@ LLM_MODEL=qwen2.5:3b
 # LLM_MODEL=deepseek-chat
 
 # ==============================================================================
-# 🎯 Option C: Groq Cloud (Ultra Fast)
+# 🎯 Option C: Groq Cloud (Ultra Fast Cloud Inference)
 # ==============================================================================
 # LLM_API_KEY=gsk_your-groq-key
 # LLM_BASE_URL=https://api.groq.com/openai/v1
 # LLM_MODEL=llama-3.3-70b-versatile
 
 # ==============================================================================
-# Vault & Search Parameters
+# Vault Storage & Scientometric Limits
 # ==============================================================================
 SEMANTIC_SCHOLAR_API_KEY=
 DEFAULT_VAULTS_DIR=./vaults
@@ -130,12 +133,12 @@ ENABLE_ELBOW_CUTOFF=true
 
 ## 🚀 Quickstart & Usage
 
-### 1. Create a New Research Knowledge Base
+### 1. Build a New Research Knowledge Base
 Run `litgraph` directly from your terminal:
 
 ```bash
 litgraph \
-  --id "transformer_interpretability" \
+  --id "transformer_circuits" \
   --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
   --requirements "Peer-reviewed or high-impact preprints published after 2021" \
   --format "APA 7th" \
@@ -147,7 +150,7 @@ Add new research depth or sub-topics without losing previous notes:
 
 ```bash
 litgraph \
-  --id "transformer_interpretability" \
+  --id "transformer_circuits" \
   --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
   --update "Sparse Autoencoders and Superposition in Language Models" \
   --max-papers 3
@@ -155,21 +158,21 @@ litgraph \
 
 ---
 
-## 📖 Viewing in Obsidian
+## 📖 Exploring in Obsidian
 
 1. Open the **Obsidian** app.
 2. Click **"Open folder as vault"**.
-3. Select the generated directory: `./vaults/transformer_interpretability`.
-4. Click **Graph view** (or press `Ctrl/Cmd + G`) to explore your interactive 3D knowledge graph!
+3. Select the generated directory: `./vaults/transformer_circuits`.
+4. Open the **Graph view** (`Ctrl/Cmd + G`) to explore your interactive 3D knowledge network!
 
 ### Generated Vault Structure
 ```text
-vaults/transformer_interpretability/
-├── Formatted_Bibliography.md    # Clean literature list (ready to copy into papers/theses)
+vaults/transformer_circuits/
+├── Formatted_Bibliography.md    # Pure literature list (clean copy for Word/LaTeX)
 ├── _Bibliography.md             # Interactive Obsidian bibliography with [[links]]
 ├── _Overview_Synthesis.md       # Master executive review synthesized in English
 ├── references.bib               # (Generated if BibTeX format is chosen)
-├── Sources/                     # Atomic notes for each paper
+├── Sources/                     # Atomic notes for each verified paper
 │   ├── In-context Learning and Induction Heads.md
 │   ├── Toy Models of Superposition.md
 │   └── ...
@@ -181,46 +184,25 @@ vaults/transformer_interpretability/
 
 ---
 
-## 🐍 Python API Usage
-
-You can also use `LitGraphAgent` directly inside your Python scripts:
-
-```python
-from lit_graph import LitGraphAgent, UniversalLLMProvider, LiteratureManager
-from lit_graph.search.engine import AcademicSearchEngine
-from lit_graph.config import settings
-
-# 1. Initialize universal provider
-llm = UniversalLLMProvider(
-    api_key=settings.llm_api_key,
-    model_name=settings.llm_model,
-    base_url=settings.llm_base_url
-)
-
-# 2. Initialize Agent
-searcher = AcademicSearchEngine()
-agent = LitGraphAgent(llm=llm, search_engine=searcher)
-manager = LiteratureManager(root_vaults_dir="./vaults", agent=agent)
-
-# 3. Create research vault
-state = manager.create_base(
-    base_id="quantum_ml",
-    topic="Variational Quantum Algorithms for Optimization",
-    requirements="Recent papers with empirical benchmarks",
-    citation_format="IEEE",
-    max_papers=5
-)
-```
-
----
-
 ## 🧪 Testing Suite
 
-Run the unit and integration tests with `pytest`:
+Run the test suite with `pytest`:
 
 ```bash
 pytest
 ```
+
+---
+
+## 👥 Contributors
+
+Thanks to all the contributors who built and improved this project:
+
+- [@Icold21](https://github.com/Icold21) (Project Lead)
+- [@David200109](https://github.com/David200109)
+- [@Geniy-molodec](https://github.com/Geniy-molodec)
+- [@NodarChigladse](https://github.com/NodarChigladse)
+- [@podorogn1k](https://github.com/podorogn1k)
 
 ---
 
