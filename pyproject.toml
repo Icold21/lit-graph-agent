@@ -11,7 +11,7 @@ license = "MIT"
 authors = [
     { name = "Your Name", email = "your.email@example.com" }
 ]
-keywords = ["obsidian", "literature-review", "knowledge-graph", "ai-agent", "arxiv", "zettelkasten"]
+keywords = ["obsidian", "literature-review", "knowledge-graph", "ai-agent", "deepseek", "arxiv", "zettelkasten"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -32,11 +32,15 @@ dependencies = [
 ]
 
 [project.scripts]
-litgraph = "main:main"
+litgraph = "lit_graph.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["lit_graph*"]
 exclude = ["vaults*", "tests*"]
 
-[tool.setuptools]
-py-modules = ["main"]
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+ignore = ["E501"]
