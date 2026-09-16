@@ -28,14 +28,19 @@ class ObsidianVaultManager:
         citations = [f"[[Sources/{self.clean_name(cit)}|{cit}]]" for cit in paper.citing_paper_titles]
         references = [f"[[Sources/{self.clean_name(ref)}|{ref}]]" for ref in paper.referenced_paper_titles]
 
+        # Безопасная обработка кавычек для совместимости с Python 3.10 и 3.11
+        safe_title = paper.title.replace('"', "'")
+        safe_venue = (paper.venue or "N/A").replace('"', "'")
+        safe_url = paper.doi_or_url or ""
+
         lines = [
             "---",
-            f"id: \"{paper.id}\"",
-            f"title: \"{paper.title.replace('\"', "'")}\"",
+            f'id: "{paper.id}"',
+            f'title: "{safe_title}"',
             f"authors: {paper.authors}",
             f"year: {paper.year or 'N/A'}",
-            f"venue: \"{paper.venue or 'N/A'}\"",
-            f"url: \"{paper.doi_or_url or ''}\"",
+            f'venue: "{safe_venue}"',
+            f'url: "{safe_url}"',
             f"citation_count: {paper.citation_count}",
             f"citation_velocity: {paper.citation_velocity}",
             f"influential_ratio: {paper.influential_ratio}",
@@ -88,9 +93,11 @@ class ObsidianVaultManager:
 
     def write_concept_note(self, concept: str, linked_titles: list[str]):
         filepath = self.concepts_dir / f"{self.clean_name(concept)}.md"
+        safe_concept = concept.replace('"', "'")
+
         lines = [
             "---",
-            f"concept: \"{concept}\"",
+            f'concept: "{safe_concept}"',
             "type: concept_hub",
             "---",
             f"# Concept: {concept}",
@@ -105,14 +112,16 @@ class ObsidianVaultManager:
 
     def write_hub_files(self, state: LiteratureBaseState):
         """Generates overview hub, interactive bibliography, and pure formatted export file."""
-        
+        safe_topic = state.topic.replace('"', "'")
+        safe_format = state.citation_format.replace('"', "'")
+
         # 1. Overview Synthesis Note
         overview_path = self.vault_path / "_Overview_Synthesis.md"
         overview_lines = [
             "---",
-            f"topic: \"{state.topic}\"",
+            f'topic: "{safe_topic}"',
             f"total_sources: {len(state.papers)}",
-            f"last_updated: \"{state.updated_at}\"",
+            f'last_updated: "{state.updated_at}"',
             "type: synthesis_hub",
             "---",
             f"# Master Synthesis: {state.topic}",
@@ -138,7 +147,7 @@ class ObsidianVaultManager:
         interactive_bib_path = self.vault_path / "_Bibliography.md"
         bib_lines = [
             "---",
-            f"citation_format: \"{state.citation_format}\"",
+            f'citation_format: "{safe_format}"',
             f"total_entries: {len(state.papers)}",
             "type: master_bibliography",
             "---",
@@ -157,7 +166,7 @@ class ObsidianVaultManager:
         with open(interactive_bib_path, "w", encoding="utf-8") as f:
             f.write("\n".join(bib_lines))
 
-        # 3. Clean Standalone Export File (No frontmatter, ready to copy into Word/Docs/Thesis)
+        # 3. Clean Standalone Export File
         export_bib_path = self.vault_path / "Formatted_Bibliography.md"
         clean_lines = [
             f"# References ({state.citation_format})",
@@ -172,7 +181,7 @@ class ObsidianVaultManager:
         with open(export_bib_path, "w", encoding="utf-8") as f:
             f.write("\n".join(clean_lines))
 
-        # 4. Optional BibTeX export file if BibTeX format is chosen
+        # 4. Optional BibTeX export file
         if "bibtex" in state.citation_format.lower():
             bibtex_file = self.vault_path / "references.bib"
             with open(bibtex_file, "w", encoding="utf-8") as f:
