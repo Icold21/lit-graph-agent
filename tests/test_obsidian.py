@@ -12,9 +12,9 @@ def test_obsidian_vault_generation(tmp_path, sample_paper):
     content = note_path.read_text(encoding="utf-8")
     assert "type: literature_note" in content
     assert "In-context Learning and Induction Heads" in content
-    assert "## 📊 Scientometric Profile" in content
+    assert "node_weight:" in content
 
-    # Test master files
+    # Test master hub files
     state = LiteratureBaseState(
         base_id="test_vault",
         topic="Transformers Research",
@@ -27,3 +27,4 @@ def test_obsidian_vault_generation(tmp_path, sample_paper):
     vault.write_hub_files(state)
     assert (tmp_path / "_Overview_Synthesis.md").exists()
     assert (tmp_path / "_Bibliography.md").exists()
+    assert (tmp_path / "Formatted_Bibliography.md").exists()

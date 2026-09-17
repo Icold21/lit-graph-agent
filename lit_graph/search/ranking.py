@@ -59,6 +59,5 @@ def find_elbow_cutoff(scores: List[float], min_k: int = 3, max_k: int = 8) -> in
             max_drop = d
             max_drop_idx = i
 
-    # Cutoff preserves all elite papers up to the cliff
     optimal_k = max_drop_idx + 1
     return max(min_k, min(optimal_k, max_k, n))

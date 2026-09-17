@@ -1,5 +1,20 @@
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional
 from pydantic import BaseModel, Field
+
+
+class ConceptMention(BaseModel):
+    concept_name: str
+    paper_title: str
+    page_number: Optional[int] = None
+    context_snippet: str = ""
+
+
+class ConceptHub(BaseModel):
+    name: str
+    summary_en: str = ""
+    aggregated_score: float = 0.0
+    normalized_weight: float = 0.5  # Continuous smooth weight from 0.0 to 1.0
+    mentions: List[ConceptMention] = Field(default_factory=list)
 
 
 class Paper(BaseModel):
@@ -11,32 +26,31 @@ class Paper(BaseModel):
     doi_or_url: Optional[str] = None
     abstract: str = ""
     
-    # Raw Academic Metrics
+    # Scientometric metrics
     citation_count: int = 0
     influential_citation_count: int = 0
-    
-    # Objective Calculated Scientific Metrics
-    citation_velocity: float = 0.0          # Citations / Year
-    influential_ratio: float = 0.0          # Influential / Total
-    objective_scientific_score: float = 0.0 # Composite Scientometric Score
+    citation_velocity: float = 0.0
+    influential_ratio: float = 0.0
+    objective_scientific_score: float = 0.0
+    normalized_weight: float = 0.5  # Continuous smooth weight from 0.0 to 1.0
     is_elbow_selected: bool = False
     
-    # 3-Stage LLM Validation
+    # Validation
     topic_relevance_score: float = 0.0
     topic_relevance_reason: str = ""
     requirements_met: bool = False
     requirements_reason: str = ""
     scientific_value_score: float = 0.0
-    scientific_value_reason: str = ""
     
-    # English Knowledge Synthesis
+    # Synthesis & Concepts Grounding
     summary_en: str = ""
     key_findings_en: List[str] = Field(default_factory=list)
     methodology_en: str = ""
     limitations_en: str = ""
     extracted_concepts: List[str] = Field(default_factory=list)
+    concept_mentions: List[ConceptMention] = Field(default_factory=list)
     
-    # Citation Graph Connections
+    # Graph connections
     referenced_paper_titles: List[str] = Field(default_factory=list)
     citing_paper_titles: List[str] = Field(default_factory=list)
     related_paper_titles: List[str] = Field(default_factory=list)
@@ -57,7 +71,7 @@ class LiteratureBaseState(BaseModel):
     citation_format: str
     overall_summary_en: str = ""
     papers: Dict[str, Paper] = Field(default_factory=dict)
-    concepts: Set[str] = Field(default_factory=set)
+    concepts: Dict[str, ConceptHub] = Field(default_factory=dict)
     edges: List[GraphEdge] = Field(default_factory=list)
     bibliography_en: str = ""
     created_at: str = ""

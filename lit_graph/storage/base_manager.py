@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from ..models import LiteratureBaseState
 from .obsidian_vault import ObsidianVaultManager
 
-# Импортируем LiteratureAgent ТОЛЬКО для статического анализа типов,
-# чтобы избежать циклического импорта во время выполнения
 if TYPE_CHECKING:
     from ..agent.core import LiteratureAgent
 
@@ -29,7 +27,8 @@ class LiteratureManager:
         topic: str,
         requirements: str,
         citation_format: str = "APA 7th",
-        max_papers: int = 8
+        max_papers: int = 5,
+        deep_scan: bool = False
     ) -> LiteratureBaseState:
         vault_path = self.root_dir / base_id
         state, vault = self.agent.initialize_base(
@@ -38,7 +37,8 @@ class LiteratureManager:
             requirements=requirements,
             citation_format=citation_format,
             vault_path=str(vault_path),
-            max_papers=max_papers
+            max_papers=max_papers,
+            deep_scan=deep_scan
         )
         self.active_bases[base_id] = state
         self.vaults[base_id] = vault
@@ -48,7 +48,8 @@ class LiteratureManager:
         self,
         base_id: str,
         directive: str,
-        max_new_papers: int = 5
+        max_new_papers: int = 5,
+        deep_scan: bool = False
     ) -> Optional[LiteratureBaseState]:
         if base_id not in self.active_bases:
             print(f"[Manager] Base '{base_id}' is not loaded in memory.")
@@ -57,7 +58,8 @@ class LiteratureManager:
             self.active_bases[base_id],
             self.vaults[base_id],
             directive,
-            max_new_papers=max_new_papers
+            max_new_papers=max_new_papers,
+            deep_scan=deep_scan
         )
 
     def delete_base(self, base_id: str) -> None:
