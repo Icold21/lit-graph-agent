@@ -10,6 +10,21 @@
 
 ---
 
+## 📊 Benchmark: SciERC
+
+The graph-construction core is evaluated on [SciERC](https://nlp.cs.washington.edu/sciIE/), the standard benchmark for scientific knowledge-graph construction (500 abstracts, 6 entity types, EMNLP 2018). The production `PromptAgent.synthesize_paper` step extracts concepts from **20 abstracts**; they are compared with gold SciERC entity mentions.
+
+| Graph signal | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: |
+| Concept nodes — exact match | 0.538 | 0.254 | 0.345 |
+| Concept nodes — relaxed match | 0.723 | 0.341 | 0.464 |
+| Paper → concept edges — relaxed | 0.723 | 0.341 | 0.464 |
+| Content entities only — relaxed | 0.706 | 0.402 | **0.512** |
+
+**Setup:** `qwen2.5:3b` via Ollama · 20 abstracts (`seed=42`) · 5.95 concepts per abstract vs 12.6 gold mentions. Exact = normalised string equality; relaxed = token Jaccard ≥ 0.5. The edge row is the bipartite projection of the same node matches. Typed relations are not scored because the pipeline does not predict SciERC relation types. This is a regression sample, not a state-of-the-art claim. [Protocol & reproduction](benchmarks/README.md) · [script](benchmarks/scierc_benchmark.py) · [raw JSON](benchmarks/results/scierc_qwen2.5-3b.json).
+
+---
+
 ## 🌟 Key Features
 
 - 🤖 **Agent team architecture:** five specialist agents (Lead, Graph, Retrieval, QA, LLM) run as nodes of a LangGraph `StateGraph`; the Lead compiles the workflow and each hand-off is an explicit edge with a recorded activity event.
@@ -263,6 +278,10 @@ The QA agent validates:
 - canonical concept coverage.
 
 CI runs the full suite on Python 3.10–3.13 and fails on lint errors.
+
+The graph-construction core is additionally benchmarked on **SciERC**; see
+[benchmarks/README.md](benchmarks/README.md) for the protocol and the
+reproducible command.
 
 ---
 
