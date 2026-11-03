@@ -22,5 +22,7 @@ obsidian_vaults/
 .pytest_cache/
 .ruff_cache/
 .litgraph_cache/
+benchmarks/data/
+benchmarks/results/*.jsonl
 .coverage
 htmlcov/
