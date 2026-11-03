@@ -13,7 +13,8 @@
 ## 🌟 Key Features
 
 - 🤖 **Agent team architecture:** five specialist agents (Lead, Graph, Retrieval, QA, LLM) communicate through an explicit `AgentBus`; every pipeline step is a routed message.
-- 🔍 **Iterative adaptive search:** recursively queries **arXiv** and **Semantic Scholar** (with a web fallback), generating targeted sub-queries until the paper quota is met.
+- 🧭 **Model-driven search-engine routing:** the LLM reads a catalog of engine descriptions (Semantic Scholar, arXiv, open web) and picks the primary/fallback set that fits the task, instead of blindly querying everything.
+- 🔍 **Iterative adaptive search:** queries the model-selected engines (**Semantic Scholar / arXiv / open web**), adds a fallback round when results are thin, and generates targeted sub-queries until the paper quota is met.
 - ⚡ **Fast consolidated validation:** one LLM pass checks topic relevance and strict requirements simultaneously.
 - 📐 **Scientometric ranking & elbow cutoff:** ranks candidates by citation velocity, influential-citation ratio and log-scaled impact, then prunes the low-impact tail with a curvature-based elbow (Kneedle-style) heuristic.
 - 🧹 **Concept canonicalization:** plural forms, casing and parenthetical acronyms (`GNNs` → `Graph Neural Networks`) are merged, and one-off noise concepts are filtered (`MIN_CONCEPT_PAPERS`).
@@ -68,7 +69,10 @@ Detailed contribution history: [CONTRIBUTORS.md](CONTRIBUTORS.md). Agent protoco
 User Directive (topic, requirements, format, quota, --deep)
         │
         ▼
-LeadAIAgent ──► RetrievalAgent: search + deduplicate + pre-rank
+LeadAIAgent ──► RetrievalAgent ──► PromptAgent: choose engines from their descriptions
+        │
+        ▼
+RetrievalAgent: search selected engines (+ fallback if the result set is thin)
         │
         ▼
 LeadAIAgent ──► PromptAgent: consolidated validation (topic + requirements)
@@ -140,6 +144,12 @@ CANDIDATE_EVAL_LIMIT=8
 CITATION_EXPANSION_LIMIT=2
 ENABLE_ELBOW_CUTOFF=true
 
+# Dynamic search-engine routing
+SEARCH_ROUTER_ENABLED=true
+SEARCH_ROUTER_MAX_PRIMARY=2
+SEARCH_FALLBACK_MIN_RESULTS=5
+# SEARCH_ENGINES_OVERRIDE=arxiv,web   # bypass the model and pin engines
+
 # Knowledge-graph quality
 MIN_CONCEPT_PAPERS=2        # drop concepts that appear in fewer papers
 MAX_CONCEPTS_PER_PAPER=8
@@ -190,9 +200,16 @@ litgraph --delete --id "transformer_circuits"
 
 # Team / agent ownership
 litgraph --team
+
+# Inspect the search-engine catalog the model chooses from
+litgraph --tools
+
+# Model picks the engines automatically (default); these flags override it
+litgraph --id "transformer_circuits" --update "Induction heads" --engines arxiv,web
+litgraph --id "transformer_circuits" --update "Induction heads" --no-router
 ```
 
-Additional flags: `--no-cache`, `--no-elbow`, `--verbose`, `--version`.
+Additional flags: `--no-cache`, `--no-elbow`, `--no-router`, `--engines`, `--verbose`, `--version`.
 
 ---
 
@@ -229,6 +246,12 @@ pytest -q
 ruff check lit_graph tests
 litgraph --check --id your_base
 ```
+
+The Retrieval agent asks the LLM agent to choose a search strategy from the
+engine catalog before each run; the decision (primary/fallback/reason/source)
+is printed, logged through the bus and persisted in `_state.json` as
+`search_plan`. Per-paper provenance is stored as `source_engine` in the note
+frontmatter.
 
 The QA agent validates:
 

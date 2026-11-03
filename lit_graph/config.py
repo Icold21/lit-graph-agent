@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     citation_expansion_limit: int = 2
     enable_elbow_cutoff: bool = True
 
+    # Dynamic search-engine routing (LLM picks engines from the tool catalog)
+    search_router_enabled: bool = True
+    search_router_max_primary: int = 2
+    search_fallback_min_results: int = 5
+    search_engines_override: str = ""
+
     # Knowledge-graph quality controls
     min_concept_papers: int = 2
     max_concepts_per_paper: int = 8

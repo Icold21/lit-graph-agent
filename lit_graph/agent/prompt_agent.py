@@ -3,7 +3,7 @@
 from typing import Any, List, Tuple
 
 from ..llm.base import BaseLLMProvider
-from ..llm.prompts import SYSTEM_LIBRARIAN, sub_queries_prompt
+from ..llm.prompts import SYSTEM_LIBRARIAN, engine_selection_prompt, sub_queries_prompt
 from ..utils.logging_setup import get_logger
 from .bus import AgentBus, BaseTeamAgent
 from .roles import TEAM_ROLES
@@ -27,6 +27,7 @@ class PromptAgent(BaseTeamAgent):
     def actions(self) -> Tuple[str, ...]:
         return (
             "generate_sub_queries",
+            "select_search_engines",
             "validate",
             "synthesize_paper",
             "define_concepts",
@@ -42,6 +43,13 @@ class PromptAgent(BaseTeamAgent):
                 topic=payload["topic"],
                 requirements=payload["requirements"],
                 existing_queries=list(payload.get("existing_queries") or []),
+            )
+        if action == "select_search_engines":
+            return self._select_search_engines(
+                task=payload["task"],
+                requirements=payload.get("requirements", ""),
+                catalog=payload["catalog"],
+                context=payload.get("context", ""),
             )
         if action == "validate":
             return self.validator.validate_candidate(
@@ -68,6 +76,21 @@ class PromptAgent(BaseTeamAgent):
             self.synthesizer.build_overall_synthesis(payload["state"])
             return len(payload["state"].overall_summary_en)
         raise ValueError(f"Unsupported prompt action: {action}")
+
+    def _select_search_engines(
+        self,
+        task: str,
+        requirements: str,
+        catalog: str,
+        context: str = "",
+    ) -> Any:
+        """Ask the model which retrieval backends match the task description."""
+        prompt = engine_selection_prompt(task, requirements, catalog, context)
+        try:
+            return self.llm.generate_json(prompt, SYSTEM_LIBRARIAN)
+        except Exception as exc:  # noqa: BLE001 - routing must never break a run
+            logger.warning("Engine selection failed, falling back to heuristics: %s", exc)
+            return {}
 
     def _generate_sub_queries(
         self, topic: str, requirements: str, existing_queries: List[str]

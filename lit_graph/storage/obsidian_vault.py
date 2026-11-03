@@ -200,6 +200,7 @@ class ObsidianVaultManager:
             f"venue: {_yaml(paper.venue or 'N/A')}",
             f"url: {_yaml(paper.doi_or_url or '')}",
             f"pdf_url: {_yaml(paper.pdf_url or '')}",
+            f"source_engine: {_yaml(paper.source_engine or 'unknown')}",
             f"citation_count: {paper.citation_count}",
             f"citation_velocity: {paper.citation_velocity}",
             f"objective_score: {paper.objective_scientific_score}",

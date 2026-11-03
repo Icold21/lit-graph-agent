@@ -13,6 +13,7 @@ from .config import settings
 from .llm.providers import UniversalLLMProvider
 from .qa.vault_checks import run_state_checks, run_vault_checks
 from .search.engine import AcademicSearchEngine
+from .search.tools import SEARCH_TOOLS, tool_catalog
 from .storage.base_manager import LiteratureManager
 from .storage.obsidian_vault import ObsidianVaultManager
 from .utils.logging_setup import configure_logging
@@ -67,8 +68,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--delete", action="store_true", help="Delete the base identified by --id and exit")
     parser.add_argument("--check", action="store_true", help="Run QA checks on the vault identified by --id")
     parser.add_argument("--team", action="store_true", help="Show the agent team and role ownership")
+    parser.add_argument(
+        "--tools",
+        action="store_true",
+        help="Show the search-engine catalog the model chooses from",
+    )
     parser.add_argument("--no-cache", action="store_true", help="Disable the on-disk search cache")
     parser.add_argument("--no-elbow", action="store_true", help="Disable elbow cutoff (keep top max-papers)")
+    parser.add_argument(
+        "--no-router",
+        action="store_true",
+        help="Disable LLM-driven search-engine selection (use the heuristic plan)",
+    )
+    parser.add_argument(
+        "--engines",
+        type=str,
+        default=None,
+        help="Manual engine override, comma-separated: semantic_scholar,arxiv,web",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     parser.add_argument("--version", action="version", version=f"litgraph-agent {__version__}")
     return parser
@@ -83,6 +100,24 @@ def _print_team() -> None:
     for key in TEAM_ORDER:
         role = get_role(key)
         table.add_row(role.title, f"{role.owner} ({role.handle})", role.agent, Text(role.responsibility))
+    console.print(table)
+
+
+def _print_tools() -> None:
+    table = Table(title="🔎 Search Engine Catalog (selected by the model)", border_style="cyan")
+    table.add_column("Key", style="bold cyan")
+    table.add_column("Engine", style="bold")
+    table.add_column("Description", style="white", max_width=55)
+    table.add_column("Best for", style="green", max_width=30)
+    table.add_column("Citations", justify="center")
+    for tool in tool_catalog():
+        table.add_row(
+            tool.key,
+            tool.label,
+            tool.description,
+            ", ".join(tool.best_for),
+            "yes" if tool.returns_citations else "no",
+        )
     console.print(table)
 
 
@@ -127,12 +162,26 @@ def main(argv: list[str] | None = None) -> int:
         settings.cache_enabled = False
     if args.no_elbow:
         settings.enable_elbow_cutoff = False
+    if args.no_router:
+        settings.search_router_enabled = False
+    if args.engines is not None:
+        requested = [part.strip() for part in args.engines.split(",") if part.strip()]
+        unknown = [name for name in requested if name not in SEARCH_TOOLS]
+        if not requested or unknown:
+            parser.error(
+                f"--engines expects comma-separated values from: {', '.join(SEARCH_TOOLS)}"
+            )
+        settings.search_engines_override = ",".join(requested)
     if args.max_papers < 1:
         parser.error("--max-papers must be at least 1")
 
     try:
         if args.team:
             _print_team()
+            return 0
+
+        if args.tools:
+            _print_tools()
             return 0
 
         if args.check:

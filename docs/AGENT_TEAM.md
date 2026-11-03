@@ -29,11 +29,17 @@ Role metadata lives in `lit_graph/agent/roles.py`; the CLI renders it with
 5. Re-raises failures after recording them as `status="error"`.
 
 Agents can call each other via `BaseTeamAgent.request(...)`; the sender is then
-the role key, not `lead`. The current cross-role call is:
+the role key, not `lead`. The current cross-role calls are:
 
 ```
+RetrievalAgent.plan_search     → PromptAgent.select_search_engines
 RetrievalAgent.suggest_queries → PromptAgent.generate_sub_queries
 ```
+
+`select_search_engines` receives the catalog from `lit_graph/search/tools.py`
+(one natural-language description per backend) plus the task and requirements.
+The returned primary/fallback set is validated by `SearchRouter`, persisted in
+`state.search_plan`, and only then executed.
 
 ## Actions
 
@@ -41,7 +47,9 @@ RetrievalAgent.suggest_queries → PromptAgent.generate_sub_queries
 
 | Action | Payload | Result |
 | --- | --- | --- |
-| `search` | `query`, `top_k` | ranked candidate dictionaries |
+| `plan_search` | `task`, `requirements`, `context` | `{primary, fallback, rationale, confidence, source}` |
+| `describe_engines` | - | engine catalog (key/label/description/best_for) |
+| `search` | `query`, `top_k`, `engines`, `fallback_engines`, `min_results` | ranked candidate dictionaries |
 | `expand_citations` | `paper_id`, `limit` | `{"references": [...], "citations": [...]}` |
 | `fetch_pages` | `doi_or_url`, `pdf_url`, `max_pages` | `{page_number: text}` |
 | `suggest_queries` | `topic`, `requirements`, `existing_queries` | next query strings |
@@ -51,6 +59,7 @@ RetrievalAgent.suggest_queries → PromptAgent.generate_sub_queries
 | Action | Payload | Result |
 | --- | --- | --- |
 | `generate_sub_queries` | `topic`, `requirements`, `existing_queries` | query strings |
+| `select_search_engines` | `task`, `requirements`, `catalog`, `context` | `{primary, fallback, rationale, confidence}` |
 | `validate` | `paper`, `topic`, `requirements` | `bool` |
 | `synthesize_paper` | `paper` | `True` |
 | `define_concepts` | `state` | hub count |
@@ -78,7 +87,8 @@ RetrievalAgent.suggest_queries → PromptAgent.generate_sub_queries
 ## Run sequence
 
 ```
-lead → retrieval.search
+lead → retrieval.plan_search            → llm.select_search_engines
+lead → retrieval.search                 (selected engines + fallback)
 lead → llm.validate                     (per candidate)
 lead → retrieval.expand_citations       (per selected paper)
 lead → llm.synthesize_paper
@@ -109,6 +119,8 @@ duration is visible in the vault.
 
 - A specialist never writes another specialist's data directly.
 - All LLM prompts live in `lit_graph/llm/prompts.py`.
+- Search-engine descriptions live in `lit_graph/search/tools.py`; the model
+  chooses from that catalog and the choice is validated/persisted before use.
 - All graph/vault writes go through `GraphAgent`.
 - QA never mutates state; it only reports.
 - Every run ends with a persisted `_state.json`.

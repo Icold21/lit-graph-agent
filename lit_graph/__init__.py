@@ -10,6 +10,7 @@ from .agent.prompt_agent import PromptAgent
 from .agent.retrieval_agent import RetrievalAgent
 from .agent.roles import TEAM_ORDER, TEAM_ROLES, TeamRole, get_role
 from .llm.providers import UniversalLLMProvider
+from .search.router import SearchPlan, SearchRouter
 from .storage.base_manager import LiteratureManager
 
 LitGraphAgent = LiteratureAgent
@@ -27,6 +28,8 @@ __all__ = [
     "GraphAgent",
     "PromptAgent",
     "RetrievalAgent",
+    "SearchPlan",
+    "SearchRouter",
     "TEAM_ORDER",
     "TEAM_ROLES",
     "TeamRole",

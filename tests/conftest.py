@@ -20,6 +20,13 @@ class MockLLMProvider(BaseLLMProvider):
 
     def generate_json(self, prompt: str, system_prompt: str = "") -> Any:
         self.calls.append(prompt)
+        if "routing an academic literature retrieval task" in prompt:
+            return {
+                "primary": ["arxiv"],
+                "fallback": ["semantic_scholar"],
+                "rationale": "Recent interpretability work lives on arXiv first.",
+                "confidence": 0.9,
+            }
         if "Generate 2 distinct academic search queries" in prompt:
             return {"queries": ["latent circuits", "attention head interpretability"]}
         if "Paper to Evaluate" in prompt:
@@ -62,11 +69,31 @@ class FakeSearchEngine:
 
     def __init__(self, candidates: List[Dict[str, Any]] | None = None):
         self.candidates = candidates or []
+        self.calls: List[Dict[str, Any]] = []
 
     def set_candidates(self, candidates: List[Dict[str, Any]]) -> None:
         self.candidates = candidates
 
-    def search_and_rank(self, query: str, top_k: int = 25) -> List[Dict[str, Any]]:
+    def available_engines(self) -> List[str]:
+        return ["semantic_scholar", "arxiv", "web"]
+
+    def search_and_rank(
+        self,
+        query: str,
+        top_k: int = 25,
+        engines: List[str] | None = None,
+        fallback_engines: List[str] | None = None,
+        min_results: int = 5,
+    ) -> List[Dict[str, Any]]:
+        self.calls.append(
+            {
+                "query": query,
+                "top_k": top_k,
+                "engines": list(engines) if engines else None,
+                "fallback_engines": list(fallback_engines) if fallback_engines else None,
+                "min_results": min_results,
+            }
+        )
         return [dict(candidate) for candidate in self.candidates][:top_k]
 
     def expand_citations(self, paper_id: str, limit: int = 3) -> Dict[str, List[str]]:

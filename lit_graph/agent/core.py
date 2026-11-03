@@ -1,5 +1,5 @@
 ﻿from datetime import datetime, timezone
-from typing import List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 from rich.console import Console
 from rich.panel import Panel
@@ -19,6 +19,7 @@ from ..llm.base import BaseLLMProvider
 from ..models import GraphEdge, LiteratureBaseState, Paper
 from ..search.engine import AcademicSearchEngine
 from ..search.ranking import compute_scientific_metrics, find_elbow_cutoff
+from ..search.router import SearchRouter
 from ..storage.obsidian_vault import ObsidianVaultManager
 from ..utils.logging_setup import get_logger
 from .bus import AgentBus
@@ -49,6 +50,42 @@ class LiteratureAgent:
         self.bus.register(PromptAgent(llm))
         self.bus.register(EvaluationAgent())
         self.graph_agent: GraphAgent | None = None
+        self.last_search_plan: Dict[str, Any] = {}
+
+    # ------------------------------------------------------------- orchestration
+    def _plan_search(
+        self,
+        task: str,
+        requirements: str,
+        context: str = "",
+    ) -> Dict[str, Any]:
+        """Ask the retrieval agent (which consults the LLM agent) for a strategy."""
+        try:
+            plan = self.bus.request(
+                "retrieval",
+                "plan_search",
+                task=task,
+                requirements=requirements,
+                context=context,
+            )
+        except Exception as exc:  # noqa: BLE001 - never block a run on routing
+            logger.warning("Search planning failed, using heuristic plan: %s", exc)
+            plan = SearchRouter(
+                available=getattr(self.search_engine, "available_engines", lambda: None)(),
+                max_primary=settings.search_router_max_primary,
+            ).heuristic_plan(task, requirements).to_dict()
+
+        self.last_search_plan = plan
+        primary = ", ".join(plan.get("primary", [])) or "auto"
+        fallback = ", ".join(plan.get("fallback", [])) or "none"
+        console.print(
+            f"[bold cyan]Search strategy:[/bold cyan] primary=[green]{primary}[/green] "
+            f"fallback=[dim]{fallback}[/dim] "
+            f"[dim]({plan.get('source', 'heuristic')})[/dim]"
+        )
+        if plan.get("rationale"):
+            console.print(f"[dim]  {plan['rationale']}[/dim]")
+        return plan
 
     # ------------------------------------------------------------- orchestration
     def _open_vault(self, vault_path: str) -> ObsidianVaultManager:
@@ -58,9 +95,16 @@ class LiteratureAgent:
         return vault
 
     def _collect_candidates(
-        self, topic: str, requirements: str, max_papers: int
+        self,
+        topic: str,
+        requirements: str,
+        max_papers: int,
+        search_plan: Dict[str, Any] | None = None,
     ) -> Tuple[List[Paper], Set[str]]:
         """Iterative search + validation loop shared by create and update."""
+        plan = search_plan or {}
+        engines = plan.get("primary") or None
+        fallback_engines = plan.get("fallback") or None
         valid_candidates: List[Paper] = []
         seen_paper_ids: Set[str] = set()
         used_queries: List[str] = [topic]
@@ -101,6 +145,9 @@ class LiteratureAgent:
                     "search",
                     query=current_query,
                     top_k=settings.max_search_candidates,
+                    engines=engines,
+                    fallback_engines=fallback_engines,
+                    min_results=settings.search_fallback_min_results,
                 )
                 candidates_to_eval = [
                     raw for raw in raw_candidates if raw.get("id") not in seen_paper_ids
@@ -219,8 +266,11 @@ class LiteratureAgent:
             created_at=utc_now_iso(),
             updated_at=utc_now_iso(),
         )
+        state.search_plan = self._plan_search(topic, requirements)
 
-        valid_candidates, _ = self._collect_candidates(topic, requirements, max_papers)
+        valid_candidates, _ = self._collect_candidates(
+            topic, requirements, max_papers, state.search_plan
+        )
         if not valid_candidates:
             console.print("[red]вќЊ No papers passed validation.[/red]")
             self.flush_to_vault(state, vault)
@@ -334,17 +384,25 @@ class LiteratureAgent:
         valid_candidates: List[Paper] = []
         seen_paper_ids: Set[str] = set(state.papers.keys())
 
+        combined_topic = f"{state.topic} {directive_or_query}"
+        state.search_plan = self._plan_search(
+            combined_topic,
+            state.requirements,
+            context=f"Existing base '{state.base_id}' with {len(state.papers)} papers.",
+        )
         raw_candidates = self.bus.request(
             "retrieval",
             "search",
             query=directive_or_query,
             top_k=settings.max_search_candidates,
+            engines=state.search_plan.get("primary") or None,
+            fallback_engines=state.search_plan.get("fallback") or None,
+            min_results=settings.search_fallback_min_results,
         )
         candidates_to_eval = [
             raw for raw in raw_candidates if raw.get("id") not in seen_paper_ids
         ][: settings.candidate_eval_limit]
 
-        combined_topic = f"{state.topic} {directive_or_query}"
         for raw in candidates_to_eval:
             seen_paper_ids.add(raw["id"])
             paper = Paper(**raw)
