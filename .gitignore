@@ -20,5 +20,7 @@ Thumbs.db
 vaults/
 obsidian_vaults/
 .pytest_cache/
+.ruff_cache/
+.litgraph_cache/
 .coverage
 htmlcov/
