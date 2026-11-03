@@ -2,7 +2,8 @@
 
 This project is built as a five-role agent team. Each role owns a specialist
 agent, a set of modules, and a clear part of the pipeline. The Lead agent
-coordinates every other agent through `lit_graph/agent/bus.py`.
+orchestrates every other agent through a LangGraph `StateGraph`
+(`lit_graph/agent/workflow.py`).
 
 ## Team
 
@@ -20,14 +21,14 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 
 **Zone:** end-to-end architecture and module coordination.
 
-- Designed the agent-team architecture: `LeadAIAgent` + `AgentBus` + five role agents.
+- Designed the agent-team architecture: `LeadAIAgent` + LangGraph `StateGraph` + five role agents.
 - Wrote the orchestration pipeline in `lit_graph/agent/core.py` (create, update, ranking, ingestion, flush, audit).
-- Introduced the inter-agent protocol (`AgentBus`, `AgentMessage`, action routing) and the `_Agent_Activity.md` hand-off log.
+- Introduced the LangGraph workflow (`ResearchState`, node wrappers, conditional routing, `MemorySaver`) and the `_Agent_Activity.md` hand-off log.
 - Owned configuration and runtime boundaries: `config.py` (paths, limits, batching, caching), `cli.py`, package entry points.
 - Added persistent base lifecycle and safe state handling (`_state.json`, atomic writes, reload for `--update`).
 - Coordinated Graph/Retrieval/LLM/QA contracts so each agent can evolve independently.
 
-**Key files:** `agent/core.py`, `agent/bus.py`, `agent/roles.py`, `cli.py`, `config.py`, `__init__.py`.
+**Key files:** `agent/core.py`, `agent/workflow.py`, `agent/graph_state.py`, `agent/roles.py`, `cli.py`, `config.py`, `__init__.py`.
 
 ### Вадим Лялькин (@Geniy_molodec) — Graph & Knowledge Engineer
 
@@ -55,7 +56,7 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 - Added the on-disk network cache for searches and citation lookups.
 - Built the search-engine catalog (`search/tools.py`) with per-engine descriptions, strengths, limitations and best-fit tasks.
 - Implemented `SearchRouter` validation/normalisation and the fallback heuristic used when the model cannot decide.
-- Added `plan_search` so the agent asks the LLM engineer which engines to use, then executes primary + fallback with per-paper `source_engine` provenance.
+- Added `plan_request` / `finalize_plan` nodes so the agent asks the LLM engineer which engines to use, then executes primary + fallback with per-paper `source_engine` provenance.
 - Implemented PDF ingestion for `--deep`, including open-access PDF URLs, size limits and page extraction.
 
 **Key files:** `agent/retrieval_agent.py`, `search/`, `utils/http.py`, `utils/cache.py`.
@@ -100,4 +101,6 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 | Lead | QA | Audit the generated vault and state |
 | Graph | Obsidian vault | Write notes, links, stubs, hubs, activity log |
 
-All calls are recorded by `AgentBus` and rendered into `_Agent_Activity.md`, so each run shows exactly which role contributed which step.
+All calls run as LangGraph nodes and are recorded in the graph's `activity`
+channel, then rendered into `_Agent_Activity.md`, so each run shows exactly
+which role contributed which step.

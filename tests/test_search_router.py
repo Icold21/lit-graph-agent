@@ -1,6 +1,4 @@
-from lit_graph.agent.bus import AgentBus
 from lit_graph.agent.core import LiteratureAgent
-from lit_graph.agent.prompt_agent import PromptAgent
 from lit_graph.agent.retrieval_agent import RetrievalAgent
 from lit_graph.config import settings
 from lit_graph.search.engine import AcademicSearchEngine
@@ -121,60 +119,59 @@ def test_fallback_engine_runs_when_primary_is_empty():
     assert results and results[0]["source_engine"] == "web"
 
 
-def test_retrieval_agent_asks_the_llm_agent(mock_llm, fake_search_engine):
-    bus = AgentBus()
-    bus.register(RetrievalAgent(fake_search_engine))
-    bus.register(PromptAgent(mock_llm))
-
-    plan = bus.request(
-        "retrieval",
-        "plan_search",
-        task="Recent arXiv work on induction heads",
-        requirements="recent",
-    )
-    assert plan["primary"] == ["arxiv"]
-    assert plan["source"] == "llm"
-    assert ("retrieval", "llm", "select_search_engines") in {
-        (message.sender, message.recipient, message.action) for message in bus.history
-    }
-
-
-def test_describe_engines_exposes_descriptions(mock_llm, fake_search_engine):
-    bus = AgentBus()
-    bus.register(RetrievalAgent(fake_search_engine))
-    catalog = bus.request("retrieval", "describe_engines")
+def test_retrieval_agent_catalog_exposes_descriptions(fake_search_engine):
+    catalog = RetrievalAgent(fake_search_engine).catalog()
     assert {tool["key"] for tool in catalog} == {"semantic_scholar", "arxiv", "web"}
     assert all(tool["description"] for tool in catalog)
 
 
-def test_manual_env_override_bypasses_the_model(monkeypatch, mock_llm, fake_search_engine):
-    monkeypatch.setattr(settings, "search_engines_override", "web")
-    bus = AgentBus()
-    bus.register(RetrievalAgent(fake_search_engine))
-    bus.register(PromptAgent(mock_llm))
+def test_graph_asks_the_llm_agent_to_select_engines(mock_llm, fake_search_engine, tmp_path):
+    agent = LiteratureAgent(llm=mock_llm, search_engine=fake_search_engine)
+    agent.initialize_base(
+        base_id="planned",
+        topic="Recent arXiv work on induction heads",
+        requirements="recent",
+        citation_format="APA 7th",
+        vault_path=str(tmp_path / "planned"),
+        max_papers=1,
+    )
 
-    plan = bus.request("retrieval", "plan_search", task="anything", requirements="")
+    assert agent.last_search_plan["primary"] == ["arxiv"]
+    assert agent.last_search_plan["source"] == "llm"
+    assert ("llm", "select_search_engines") in {
+        (event["recipient"], event["action"]) for event in agent.activity
+    }
+
+
+def test_manual_env_override_bypasses_the_model(monkeypatch, fake_search_engine):
+    monkeypatch.setattr(settings, "search_engines_override", "web")
+    retrieval = RetrievalAgent(fake_search_engine)
+    request = retrieval.plan_request("anything", "")
+    plan = retrieval.finalize_plan(
+        None,
+        task="anything",
+        requirements="",
+        source=request["source"],
+    )
+    assert request["needs_llm"] is False
     assert plan["source"] == "manual"
     assert plan["primary"] == ["web"]
-    assert not any(message.action == "select_search_engines" for message in bus.history)
 
 
-def test_disabled_router_uses_heuristics(monkeypatch, mock_llm, fake_search_engine):
+def test_disabled_router_uses_heuristics(monkeypatch, fake_search_engine):
     monkeypatch.setattr(settings, "search_engines_override", "")
     monkeypatch.setattr(settings, "search_router_enabled", False)
-    bus = AgentBus()
-    bus.register(RetrievalAgent(fake_search_engine))
-    bus.register(PromptAgent(mock_llm))
-
-    plan = bus.request(
-        "retrieval",
-        "plan_search",
+    retrieval = RetrievalAgent(fake_search_engine)
+    request = retrieval.plan_request("Systematic review of citation impact", "")
+    plan = retrieval.finalize_plan(
+        None,
         task="Systematic review of citation impact",
         requirements="",
+        source=request["source"],
     )
+    assert request["needs_llm"] is False
     assert plan["source"] == "heuristic"
     assert plan["primary"] == ["semantic_scholar"]
-    assert not any(message.action == "select_search_engines" for message in bus.history)
 
 
 def test_pipeline_uses_the_selected_engines(mock_llm, fake_search_engine, tmp_path):

@@ -3,7 +3,8 @@
 
 # Lead AI Engineer — orchestration, CLI, configuration
 /lit_graph/agent/core.py @Icold21
-/lit_graph/agent/bus.py @Icold21
+/lit_graph/agent/workflow.py @Icold21
+/lit_graph/agent/graph_state.py @Icold21
 /lit_graph/agent/roles.py @Icold21
 /lit_graph/cli.py @Icold21
 /lit_graph/config.py @Icold21

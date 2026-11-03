@@ -12,7 +12,7 @@
 
 ## 🌟 Key Features
 
-- 🤖 **Agent team architecture:** five specialist agents (Lead, Graph, Retrieval, QA, LLM) communicate through an explicit `AgentBus`; every pipeline step is a routed message.
+- 🤖 **Agent team architecture:** five specialist agents (Lead, Graph, Retrieval, QA, LLM) run as nodes of a LangGraph `StateGraph`; the Lead compiles the workflow and each hand-off is an explicit edge with a recorded activity event.
 - 🧭 **Model-driven search-engine routing:** the LLM reads a catalog of engine descriptions (Semantic Scholar, arXiv, open web) and picks the primary/fallback set that fits the task, instead of blindly querying everything.
 - 🔍 **Iterative adaptive search:** queries the model-selected engines (**Semantic Scholar / arXiv / open web**), adds a fallback round when results are thin, and generates targeted sub-queries until the paper quota is met.
 - ⚡ **Fast consolidated validation:** one LLM pass checks topic relevance and strict requirements simultaneously.
@@ -28,11 +28,11 @@
 
 ## 👥 Agent Team & Zones of Responsibility
 
-The project is organized around the five roles below. Each role owns a concrete agent and a set of modules; the Lead agent coordinates the others through the message bus.
+The project is organized around the five roles below. Each role owns a concrete agent and a set of modules; the Lead agent compiles a LangGraph `StateGraph` that routes the pipeline to the specialists.
 
 | Role | Owner | Agent | Responsibility |
 | --- | --- | --- | --- |
-| **Lead AI Engineer** | Иван Холодило ([@Icold21](https://github.com/Icold21)) | `LeadAIAgent` (`LiteratureAgent`) | End-to-end architecture, orchestration, agent bus, CLI, persistence |
+| **Lead AI Engineer** | Иван Холодило ([@Icold21](https://github.com/Icold21)) | `LeadAIAgent` (`LiteratureAgent`) | End-to-end architecture, LangGraph workflow, CLI, persistence |
 | **Graph & Knowledge Engineer** | Вадим Лялькин ([@Geniy_molodec](https://github.com/Geniy_molodec)) | `GraphAgent` | Graph ontology, `[[wikilinks]]`, concept canonicalization, Obsidian structure |
 | **Data / IR Engineer** | Нодар Чигладзе ([@NodarNeo](https://github.com/NodarNeo)) | `RetrievalAgent` | arXiv / Semantic Scholar / web APIs, search ranking, PDF retrieval, cache |
 | **QA / Evaluation Engineer** | Давид Чигладзе ([@David52228](https://github.com/David52228)) | `EvaluationAgent` | Quality bench, connectivity and format validation, CI |
@@ -47,18 +47,18 @@ Detailed contribution history: [CONTRIBUTORS.md](CONTRIBUTORS.md). Agent protoco
 ### How the agents interact
 
 ```
-                            AgentBus (message log → _Agent_Activity.md)
-                                            │
-  User ──► LeadAIAgent (LiteratureAgent) ───┼──────────────────────────────────┐
-                │                           │                                  │
-                ├─► RetrievalAgent ─────────┤ search / citations / PDF pages   │
-                │      └─► PromptAgent ─────┘ (asks for next search queries)   │
-                │                                                              │
-                ├─► PromptAgent ────────────► validate / summarize / define    │
-                │                                                              │
-                ├─► GraphAgent ─────────────► canonicalize / rebuild / flush   │
-                │                                                              │
-                └─► EvaluationAgent ────────► audit vault + state ─────────────┘
+                    LangGraph StateGraph (activity → _Agent_Activity.md)
+                                        │
+  User ──► LeadAIAgent (LiteratureAgent) ─┼──────────────────────────────────┐
+                │                         │                                  │
+                ├─► RetrievalAgent ───────┤ plan / search / citations / PDFs │
+                │      └─► PromptAgent ───┘ (LLM picks search engines)        │
+                │                                                            │
+                ├─► PromptAgent ──────────► validate / summarize / define     │
+                │                                                            │
+                ├─► GraphAgent ───────────► canonicalize / rebuild / flush    │
+                │                                                            │
+                └─► EvaluationAgent ──────► audit vault + state ──────────────┘
 ```
 
 ---
@@ -69,13 +69,13 @@ Detailed contribution history: [CONTRIBUTORS.md](CONTRIBUTORS.md). Agent protoco
 User Directive (topic, requirements, format, quota, --deep)
         │
         ▼
-LeadAIAgent ──► RetrievalAgent ──► PromptAgent: choose engines from their descriptions
-        │
+LangGraph nodes: plan_request ──► PromptAgent: choose engines from descriptions
+        │                         └─► SearchRouter: validate + persist plan
         ▼
 RetrievalAgent: search selected engines (+ fallback if the result set is thin)
         │
         ▼
-LeadAIAgent ──► PromptAgent: consolidated validation (topic + requirements)
+PromptAgent: consolidated validation (topic + requirements)
         │
         ▼
 Scientometric ranking + elbow cutoff (MIN_PAPERS … MAX_PAPERS)
@@ -249,9 +249,9 @@ litgraph --check --id your_base
 
 The Retrieval agent asks the LLM agent to choose a search strategy from the
 engine catalog before each run; the decision (primary/fallback/reason/source)
-is printed, logged through the bus and persisted in `_state.json` as
-`search_plan`. Per-paper provenance is stored as `source_engine` in the note
-frontmatter.
+is printed, recorded in the graph's `activity` channel and persisted in
+`_state.json` as `search_plan`. Per-paper provenance is stored as
+`source_engine` in the note frontmatter.
 
 The QA agent validates:
 

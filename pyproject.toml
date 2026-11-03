@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
     "pydantic>=2.7.0",
     "pydantic-settings>=2.2.0",
+    "langgraph>=0.3,<0.4",
     "openai>=1.30.0",
     "arxiv>=2.1.0",
     "requests>=2.32.0",
