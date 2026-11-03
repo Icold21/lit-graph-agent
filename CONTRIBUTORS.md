@@ -53,6 +53,9 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 - Fixed Semantic Scholar identifiers: arXiv IDs are queried with the required `ARXIV:` prefix; web sources are skipped.
 - Added retry/backoff for 429/5xx, configurable HTTP timeouts, stable web-result IDs and URL unwrapping.
 - Added the on-disk network cache for searches and citation lookups.
+- Built the search-engine catalog (`search/tools.py`) with per-engine descriptions, strengths, limitations and best-fit tasks.
+- Implemented `SearchRouter` validation/normalisation and the fallback heuristic used when the model cannot decide.
+- Added `plan_search` so the agent asks the LLM engineer which engines to use, then executes primary + fallback with per-paper `source_engine` provenance.
 - Implemented PDF ingestion for `--deep`, including open-access PDF URLs, size limits and page extraction.
 
 **Key files:** `agent/retrieval_agent.py`, `search/`, `utils/http.py`, `utils/cache.py`.
@@ -75,6 +78,7 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 **Zone:** prompt engineering, abstract-level criteria filtering, synthesis.
 
 - Centralized all prompts in `llm/prompts.py` (search planning, validation, summaries, concepts, grounding, bibliography, relations, review).
+- Added `engine_selection_prompt` and the `select_search_engines` action: the model reads the engine catalog and picks primary/fallback engines for the task.
 - Implemented consolidated relevance + requirements validation in `validator.py`.
 - Built paper synthesis: executive summary, key findings, methodology, limitations, concepts.
 - Added bounded batching for concept definitions and bibliographies to avoid output truncation.
@@ -89,6 +93,7 @@ coordinates every other agent through `lit_graph/agent/bus.py`.
 | Caller | Callee | Purpose |
 | --- | --- | --- |
 | Lead | Retrieval | Search, citation expansion, PDF page fetch |
+| Retrieval | LLM | Choose search engines from the catalog |
 | Retrieval | LLM | Draft the next search queries |
 | Lead | LLM | Validate papers, synthesize content, define concepts, build bibliography/review |
 | Lead | Graph | Rebuild ontology, flush vault, persist state |

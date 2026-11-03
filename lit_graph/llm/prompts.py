@@ -27,6 +27,40 @@ Generate 2 distinct academic search queries in JSON:
 """
 
 
+def engine_selection_prompt(
+    task: str,
+    requirements: str,
+    catalog: str,
+    context: str = "",
+) -> str:
+    context_block = f"\nConversation / base context: {context}\n" if context else ""
+    return f"""
+You are routing an academic literature retrieval task to the most suitable search engines.
+
+Research task: {task}
+Requirements: {requirements}
+{context_block}
+Available search engines:
+{catalog}
+
+Choose engines based on their DESCRIPTIONS and the task itself:
+- Match the topic's domain, recency needs, required metadata and expected source type.
+- `primary` engines are queried first; `fallback` engines are used only if the primary returns too few results.
+- Prefer ONE primary engine. Use two only when the task genuinely spans different source types.
+- Do NOT pick the open web for rigorous peer-reviewed literature unless the task asks for gray literature, industry reports, documentation or news.
+- Do NOT pick a source whose limitations contradict the task (e.g. arXiv for clinical medicine).
+- Never invent engine names; use only the keys listed above.
+
+Return strict JSON:
+{{
+  "primary": ["engine_key"],
+  "fallback": ["engine_key"],
+  "rationale": "One or two sentences explaining why this engine set fits the task",
+  "confidence": 0.0
+}}
+"""
+
+
 def validation_prompt(topic: str, requirements: str, title: str, year: Any, venue: Any, abstract: str) -> str:
     return f"""
 Topic: {topic}

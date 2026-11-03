@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -26,6 +26,8 @@ class Paper(BaseModel):
     doi_or_url: Optional[str] = None
     pdf_url: Optional[str] = None
     abstract: str = ""
+    # Which retrieval backend returned this record (semantic_scholar / arxiv / web).
+    source_engine: Optional[str] = None
 
     # Scientometric metrics
     citation_count: int = 0
@@ -78,6 +80,8 @@ class LiteratureBaseState(BaseModel):
     concepts: Dict[str, ConceptHub] = Field(default_factory=dict)
     edges: List[GraphEdge] = Field(default_factory=list)
     bibliography_en: str = ""
+    # Last dynamic search-engine decision (primary/fallback/rationale/source).
+    search_plan: Dict[str, Any] = Field(default_factory=dict)
     created_at: str = ""
     updated_at: str = ""
 

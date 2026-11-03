@@ -1,26 +1,40 @@
 import math
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Sequence
 
 from ..utils.cache import get_cache
 from ..utils.logging_setup import get_logger
 from .arxiv_client import ArxivClient
 from .s2_client import SemanticScholarClient
+from .tools import DEFAULT_TOOL_ORDER, SEARCH_TOOLS
 from .web_scraper import WebScraperClient
 
 logger = get_logger(__name__)
 
-CACHE_NAMESPACE = "academic_search_v2"
+CACHE_NAMESPACE = "academic_search_v3"
 
 
 class AcademicSearchEngine:
-    """Aggregates searches, calculates popularity heuristics, and expands citation networks."""
+    """Aggregates searches, calculates popularity heuristics, and expands citation networks.
+
+    The engine set is no longer hard-coded: callers may pass the engines chosen
+    by the LLM (see ``lit_graph.search.router``), with an explicit fallback set
+    that is queried only when the primary engines return too few candidates.
+    """
 
     def __init__(self, s2_api_key: str | None = None):
         self.arxiv = ArxivClient()
         self.s2 = SemanticScholarClient(s2_api_key)
         self.web = WebScraperClient()
+        self._clients = {
+            "semantic_scholar": self.s2,
+            "arxiv": self.arxiv,
+            "web": self.web,
+        }
         self._cache = get_cache()
+
+    def available_engines(self) -> List[str]:
+        return [key for key in DEFAULT_TOOL_ORDER if key in self._clients]
 
     def _calculate_pre_rank_heuristic(self, item: Dict[str, Any], query: str) -> float:
         citations = item.get("citation_count") or 0
@@ -62,21 +76,85 @@ class AcademicSearchEngine:
             if not validator(existing.get(field)) and validator(incoming.get(field)):
                 existing[field] = incoming[field]
 
-    def search_and_rank(self, query: str, top_k: int = 25) -> List[Dict[str, Any]]:
+    def _query_engine(self, engine: str, query: str, limit: int) -> List[Dict[str, Any]]:
+        client = self._clients.get(engine)
+        if client is None:
+            logger.warning("Unknown search engine %r, skipping", engine)
+            return []
+
+        try:
+            if engine == "arxiv":
+                results = client.search(query, max_results=limit)
+            elif engine == "web":
+                results = client.search(query, max_results=min(limit, 5))
+            else:
+                results = client.search(query, limit=limit)
+        except Exception as exc:  # noqa: BLE001 - one engine must not break the search
+            logger.warning("Search engine %r failed for %r: %s", engine, query, exc)
+            return []
+
+        for paper in results:
+            paper.setdefault("source_engine", engine)
+        return results
+
+    @staticmethod
+    def _normalize_engines(engines: Optional[Sequence[str]]) -> List[str]:
+        if not engines:
+            return []
+        return [key for key in dict.fromkeys(engines) if key in SEARCH_TOOLS]
+
+    def search_and_rank(
+        self,
+        query: str,
+        top_k: int = 25,
+        engines: Optional[Sequence[str]] = None,
+        fallback_engines: Optional[Sequence[str]] = None,
+        min_results: int = 5,
+    ) -> List[Dict[str, Any]]:
         if not query.strip():
             return []
 
-        cache_key = {"query": query.strip(), "top_k": top_k}
+        primary = self._normalize_engines(engines)
+        fallback = self._normalize_engines(fallback_engines)
+        if engines is None:
+            # Backwards-compatible default: both scholarly indexes first, web
+            # only as a fallback when the result set is thin.
+            primary = ["semantic_scholar", "arxiv"]
+            fallback = ["web"]
+        if not primary:
+            primary = list(DEFAULT_TOOL_ORDER)
+
+        cache_key = {
+            "query": query.strip(),
+            "top_k": top_k,
+            "primary": primary,
+            "fallback": fallback,
+            "min_results": min_results,
+        }
         cached = self._cache.get(CACHE_NAMESPACE, cache_key)
         if isinstance(cached, list):
             logger.debug("Cache hit for search query %r", query)
             return cached
 
         candidates: List[Dict[str, Any]] = []
-        candidates.extend(self.s2.search(query, limit=top_k))
-        candidates.extend(self.arxiv.search(query, max_results=top_k))
-        if len(candidates) < 5:
-            candidates.extend(self.web.search(query, max_results=5))
+        for engine in primary:
+            candidates.extend(self._query_engine(engine, query, top_k))
+
+        used = set(primary)
+        if len(candidates) < min_results:
+            for engine in fallback:
+                if engine in used:
+                    continue
+                logger.info(
+                    "Primary engines %s returned %s results; falling back to %s",
+                    primary,
+                    len(candidates),
+                    engine,
+                )
+                candidates.extend(self._query_engine(engine, query, top_k))
+                used.add(engine)
+                if len(candidates) >= min_results:
+                    break
 
         # Deduplication with metadata merging
         unique_map: Dict[str, Dict[str, Any]] = {}

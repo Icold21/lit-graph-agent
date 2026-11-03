@@ -1,9 +1,12 @@
 ﻿"""Data / IR Engineer agent: academic APIs, search ranking and PDF retrieval."""
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
+from ..config import settings
 from ..search.engine import AcademicSearchEngine
 from ..search.pdf_extractor import EphemeralPDFReader
+from ..search.router import SearchRouter
+from ..search.tools import SEARCH_TOOLS
 from ..utils.logging_setup import get_logger
 from .bus import AgentBus, BaseTeamAgent
 from .roles import TEAM_ROLES
@@ -12,7 +15,12 @@ logger = get_logger(__name__)
 
 
 class RetrievalAgent(BaseTeamAgent):
-    """Talks to arXiv / Semantic Scholar / web fallback and streams PDFs."""
+    """Talks to arXiv / Semantic Scholar / web fallback and streams PDFs.
+
+    Before searching, the agent asks the LLM engineer to pick the engines that
+    fit the task description.  The resulting plan is normalised and validated
+    here, then executed with an explicit fallback set.
+    """
 
     role = TEAM_ROLES["retrieval"]
 
@@ -20,14 +28,41 @@ class RetrievalAgent(BaseTeamAgent):
         super().__init__(bus)
         self.search_engine = search_engine
         self.pdf_reader = EphemeralPDFReader()
+        available = getattr(search_engine, "available_engines", None)
+        engines = available() if callable(available) else None
+        self.router = SearchRouter(
+            available=engines,
+            max_primary=settings.search_router_max_primary,
+        )
 
     def actions(self) -> Tuple[str, ...]:
-        return ("search", "expand_citations", "fetch_pages", "suggest_queries")
+        return (
+            "plan_search",
+            "describe_engines",
+            "search",
+            "expand_citations",
+            "fetch_pages",
+            "suggest_queries",
+        )
 
     def _handle(self, action: str, **payload: Any) -> Any:
+        if action == "plan_search":
+            return self.plan_search(
+                task=payload["task"],
+                requirements=payload.get("requirements", ""),
+                context=payload.get("context", ""),
+            )
+        if action == "describe_engines":
+            return [tool.to_dict() for tool in self.router.catalog()]
         if action == "search":
             return self.search_engine.search_and_rank(
-                payload["query"], top_k=int(payload.get("top_k", 25))
+                payload["query"],
+                top_k=int(payload.get("top_k", 25)),
+                engines=payload.get("engines"),
+                fallback_engines=payload.get("fallback_engines"),
+                min_results=int(
+                    payload.get("min_results", settings.search_fallback_min_results)
+                ),
             )
         if action == "expand_citations":
             return self.search_engine.expand_citations(
@@ -51,6 +86,48 @@ class RetrievalAgent(BaseTeamAgent):
             )
         raise ValueError(f"Unsupported retrieval action: {action}")
 
+    def plan_search(self, task: str, requirements: str = "", context: str = "") -> Dict[str, Any]:
+        """Choose search engines from their descriptions + the task via the LLM agent."""
+        override = self._parse_override(settings.search_engines_override)
+        if override:
+            plan = self.router.manual_plan(override)
+            logger.info("Manual search engines selected: %s", plan.describe())
+            return plan.to_dict()
+
+        if not settings.search_router_enabled:
+            plan = self.router.heuristic_plan(
+                task,
+                requirements,
+                reason="Dynamic engine routing is disabled; heuristic plan used.",
+            )
+            return plan.to_dict()
+
+        decision: Any = None
+        try:
+            decision = self.request(
+                "llm",
+                "select_search_engines",
+                task=task,
+                requirements=requirements,
+                catalog=self.router.catalog_prompt(),
+                context=context,
+            )
+        except Exception as exc:  # noqa: BLE001 - routing must never break a run
+            logger.warning("LLM engine selection failed, using heuristic plan: %s", exc)
+
+        plan = self.router.build_plan(
+            decision,
+            task=task,
+            requirements=requirements,
+            source="llm" if decision else "heuristic",
+        )
+        logger.info("Search engine plan: %s | %s", plan.describe(), plan.rationale)
+        return plan.to_dict()
+
+    @staticmethod
+    def _parse_override(value: str) -> List[str]:
+        return [part.strip() for part in (value or "").split(",") if part.strip()]
+
     @staticmethod
     def merge_metadata(existing: Dict[str, Any], incoming: Dict[str, Any]) -> Dict[str, Any]:
         """Public helper used by the search engine and tests."""
@@ -62,5 +139,4 @@ class RetrievalAgent(BaseTeamAgent):
         return existing
 
 
-__all__ = ["RetrievalAgent"]
-
+__all__ = ["RetrievalAgent", "SEARCH_TOOLS"]
