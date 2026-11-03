@@ -7,36 +7,19 @@ from ..config import settings
 from ..models import ConceptHub, ConceptMention, LiteratureBaseState, Paper
 from ..storage.obsidian_vault import ObsidianVaultManager
 from ..utils.logging_setup import get_logger
-from .bus import AgentBus, BaseTeamAgent
 from .concepts import concept_key, dedupe_concepts
 from .roles import TEAM_ROLES
 
 logger = get_logger(__name__)
 
 
-class GraphAgent(BaseTeamAgent):
+class GraphAgent:
     """Owns the knowledge graph: concept canonicalization, node weights and vault notes."""
 
     role = TEAM_ROLES["graph"]
 
-    def __init__(self, vault: ObsidianVaultManager, bus: AgentBus | None = None):
-        super().__init__(bus)
+    def __init__(self, vault: ObsidianVaultManager):
         self.vault = vault
-
-    def actions(self) -> Tuple[str, ...]:
-        return ("rebuild_graph", "flush", "save_state", "load_state")
-
-    def _handle(self, action: str, **payload: Any) -> Any:
-        if action == "rebuild_graph":
-            return self.rebuild_graph(payload["state"], list(payload["papers"]))
-        if action == "flush":
-            return self.flush(payload["state"], activity=payload.get("activity"))
-        if action == "save_state":
-            self.vault.save_state(payload["state"])
-            return True
-        if action == "load_state":
-            return self.vault.load_state(payload.get("base_id"))
-        raise ValueError(f"Unsupported graph action: {action}")
 
     def rebuild_graph(self, state: LiteratureBaseState, papers: List[Paper]) -> Dict[str, int]:
         """Canonicalize concepts, compute node weights and preserve definitions."""

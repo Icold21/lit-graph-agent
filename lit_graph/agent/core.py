@@ -1,33 +1,26 @@
 ﻿from datetime import datetime, timezone
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, Tuple
+from uuid import uuid4
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    BarColumn,
-    TaskProgressColumn,
-    TimeElapsedColumn,
-)
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.text import Text
 
 from ..config import settings
 from ..llm.base import BaseLLMProvider
-from ..models import GraphEdge, LiteratureBaseState, Paper
+from ..models import LiteratureBaseState
 from ..search.engine import AcademicSearchEngine
-from ..search.ranking import compute_scientific_metrics, find_elbow_cutoff
-from ..search.router import SearchRouter
 from ..storage.obsidian_vault import ObsidianVaultManager
 from ..utils.logging_setup import get_logger
-from .bus import AgentBus
 from .evaluation_agent import EvaluationAgent
 from .graph_agent import GraphAgent
+from .graph_state import ResearchState
 from .prompt_agent import PromptAgent
 from .retrieval_agent import RetrievalAgent
 from .roles import TEAM_ROLES, get_role
+from .workflow import LiteratureWorkflow
 
 console = Console()
 logger = get_logger(__name__)
@@ -38,44 +31,33 @@ def utc_now_iso() -> str:
 
 
 class LiteratureAgent:
-    """Lead AI agent: coordinates the five role agents through the message bus."""
+    """Lead AI agent: runs the five-role LangGraph research workflow."""
 
     role = TEAM_ROLES["lead"]
 
     def __init__(self, llm: BaseLLMProvider, search_engine: AcademicSearchEngine):
         self.llm = llm
         self.search_engine = search_engine
-        self.bus = AgentBus()
-        self.bus.register(RetrievalAgent(search_engine))
-        self.bus.register(PromptAgent(llm))
-        self.bus.register(EvaluationAgent())
+        self.retrieval = RetrievalAgent(search_engine)
+        self.prompt = PromptAgent(llm)
+        self.evaluation = EvaluationAgent()
         self.graph_agent: GraphAgent | None = None
+
         self.last_search_plan: Dict[str, Any] = {}
+        self.activity: list[Dict[str, Any]] = []
+        self.last_qa_report: Dict[str, Any] | None = None
 
     # ------------------------------------------------------------- orchestration
-    def _plan_search(
-        self,
-        task: str,
-        requirements: str,
-        context: str = "",
-    ) -> Dict[str, Any]:
-        """Ask the retrieval agent (which consults the LLM agent) for a strategy."""
-        try:
-            plan = self.bus.request(
-                "retrieval",
-                "plan_search",
-                task=task,
-                requirements=requirements,
-                context=context,
-            )
-        except Exception as exc:  # noqa: BLE001 - never block a run on routing
-            logger.warning("Search planning failed, using heuristic plan: %s", exc)
-            plan = SearchRouter(
-                available=getattr(self.search_engine, "available_engines", lambda: None)(),
-                max_primary=settings.search_router_max_primary,
-            ).heuristic_plan(task, requirements).to_dict()
+    def _open_vault(self, vault_path: str) -> ObsidianVaultManager:
+        vault = ObsidianVaultManager(vault_path)
+        self.graph_agent = GraphAgent(vault)
+        return vault
 
-        self.last_search_plan = plan
+    def _bind_vault(self, vault: ObsidianVaultManager) -> None:
+        if self.graph_agent is None or self.graph_agent.vault is not vault:
+            self.graph_agent = GraphAgent(vault)
+
+    def _display_plan(self, plan: Dict[str, Any]) -> None:
         primary = ", ".join(plan.get("primary", [])) or "auto"
         fallback = ", ".join(plan.get("fallback", [])) or "none"
         console.print(
@@ -85,150 +67,99 @@ class LiteratureAgent:
         )
         if plan.get("rationale"):
             console.print(f"[dim]  {plan['rationale']}[/dim]")
-        return plan
 
-    # ------------------------------------------------------------- orchestration
-    def _open_vault(self, vault_path: str) -> ObsidianVaultManager:
-        vault = ObsidianVaultManager(vault_path)
-        self.graph_agent = GraphAgent(vault)
-        self.bus.register(self.graph_agent)
-        return vault
-
-    def _collect_candidates(
+    def _run_graph(
         self,
+        *,
+        mode: str,
+        base: LiteratureBaseState,
         topic: str,
         requirements: str,
+        directive: str,
         max_papers: int,
-        search_plan: Dict[str, Any] | None = None,
-    ) -> Tuple[List[Paper], Set[str]]:
-        """Iterative search + validation loop shared by create and update."""
-        plan = search_plan or {}
-        engines = plan.get("primary") or None
-        fallback_engines = plan.get("fallback") or None
-        valid_candidates: List[Paper] = []
-        seen_paper_ids: Set[str] = set()
-        used_queries: List[str] = [topic]
-        search_queries: List[str] = [topic]
+        deep_scan: bool,
+    ) -> Dict[str, Any]:
+        """Run the compiled LangGraph workflow and return its final state."""
+        if self.graph_agent is None:
+            raise RuntimeError("Graph agent is not bound to a vault")
+
+        workflow = LiteratureWorkflow(
+            retrieval=self.retrieval,
+            prompt=self.prompt,
+            evaluation=self.evaluation,
+            graph_agent=self.graph_agent,
+            on_plan=self._display_plan,
+        )
+        graph = workflow.build(mode)
+
+        run_id = f"{base.base_id}-{uuid4().hex[:8]}"
+        config = {
+            "configurable": {"thread_id": run_id},
+            "recursion_limit": 200,
+        }
+        initial: ResearchState = {
+            "run_id": run_id,
+            "mode": mode,
+            "topic": topic,
+            "requirements": requirements,
+            "directive": directive,
+            "max_papers": max_papers,
+            "deep_scan": deep_scan,
+            "base": base.model_dump(mode="json"),
+            "plan_task": f"{topic} {directive}".strip(),
+            "plan_context": (
+                f"Existing base '{base.base_id}' with {len(base.papers)} papers."
+                if mode == "update"
+                else ""
+            ),
+            "queries": [directive] if mode == "update" else [topic],
+            "used_queries": [],
+            "round": 0,
+            "candidates": [],
+            "valid_candidates": [],
+            "selected": [],
+            "seen_ids": list(base.papers.keys()) if mode == "update" else [],
+            "ingest_index": 0,
+            "activity": [],
+        }
 
         with Progress(
             SpinnerColumn(),
             TextColumn("[bold blue]{task.description}"),
-            BarColumn(bar_width=25, style="cyan", complete_style="green"),
-            TaskProgressColumn(),
             TimeElapsedColumn(),
             console=console,
-            refresh_per_second=2,
+            refresh_per_second=4,
             transient=True,
         ) as progress:
-            search_task = progress.add_task("[yellow]рџ”Ќ Searching & validating papers...", total=max_papers)
-            search_round = 1
-            max_rounds = 3
-
-            while len(valid_candidates) < max_papers and search_round <= max_rounds:
-                if not search_queries:
-                    generated = self.bus.request(
-                        "retrieval",
-                        "suggest_queries",
-                        topic=topic,
-                        requirements=requirements,
-                        existing_queries=used_queries,
+            task = progress.add_task("[cyan]LangGraph: starting workflow...", total=None)
+            for chunk in graph.stream(initial, config=config, stream_mode="updates"):
+                for node_name in chunk:
+                    progress.update(
+                        task,
+                        description=f"[cyan]LangGraph → [bold]{node_name}[/bold]",
                     )
-                    search_queries.extend(generated)
-                    if not search_queries:
-                        logger.warning("No further search queries could be generated")
-                        break
 
-                current_query = search_queries.pop(0)
-                used_queries.append(current_query)
-                raw_candidates = self.bus.request(
-                    "retrieval",
-                    "search",
-                    query=current_query,
-                    top_k=settings.max_search_candidates,
-                    engines=engines,
-                    fallback_engines=fallback_engines,
-                    min_results=settings.search_fallback_min_results,
-                )
-                candidates_to_eval = [
-                    raw for raw in raw_candidates if raw.get("id") not in seen_paper_ids
-                ][: settings.candidate_eval_limit]
+        final = graph.get_state(config).values
+        self.activity = list(final.get("activity") or [])
+        self.last_search_plan = final.get("search_plan") or base.search_plan
+        self.last_qa_report = final.get("qa_report")
+        return dict(final)
 
-                for raw in candidates_to_eval:
-                    seen_paper_ids.add(raw["id"])
-                    paper = Paper(**raw)
-                    if self.bus.request(
-                        "llm",
-                        "validate",
-                        paper=paper,
-                        topic=topic,
-                        requirements=requirements,
-                    ):
-                        compute_scientific_metrics(paper)
-                        valid_candidates.append(paper)
-                        progress.update(search_task, completed=min(len(valid_candidates), max_papers))
-                        if len(valid_candidates) >= max_papers:
-                            break
-                    else:
-                        logger.info("Rejected %r: %s", paper.title, paper.topic_relevance_reason)
-
-                search_round += 1
-
-        return valid_candidates, seen_paper_ids
-
-    def _ingest_paper(self, paper: Paper, state: LiteratureBaseState, deep_scan: bool) -> None:
-        """Citation expansion + synthesis + optional deep PDF scan for one paper."""
-        citation_data = self.bus.request(
-            "retrieval",
-            "expand_citations",
-            paper_id=paper.id,
-            limit=settings.citation_expansion_limit,
-        )
-        paper.referenced_paper_titles = citation_data.get("references", [])
-        paper.citing_paper_titles = citation_data.get("citations", [])
-
-        for reference in paper.referenced_paper_titles:
-            state.add_edge(
-                GraphEdge(source_title=paper.title, target_title=reference, relation_type="cites")
-            )
-
-        self.bus.request("llm", "synthesize_paper", paper=paper)
-
-        if deep_scan:
-            pages = self.bus.request(
-                "retrieval",
-                "fetch_pages",
-                doi_or_url=paper.doi_or_url or "",
-                pdf_url=paper.pdf_url,
-            )
-            if pages:
-                self.bus.request("llm", "ground_concepts", paper=paper, pages=pages)
-                del pages
-
-        state.papers[paper.id] = paper
-
-    def _audit(self, state: LiteratureBaseState, vault: ObsidianVaultManager) -> None:
-        try:
-            report = self.bus.request(
-                "qa",
-                "audit",
-                state=state,
-                vault_path=str(vault.vault_path),
-            )
-        except Exception as exc:  # noqa: BLE001 - QA must never break a run
-            logger.error("QA audit failed: %s", exc)
-            return
-
-        if report.errors:
+    def _report_qa(self) -> None:
+        report = self.last_qa_report or {}
+        errors = [issue for issue in report.get("issues", []) if issue.get("severity") == "error"]
+        warnings = [
+            issue for issue in report.get("issues", []) if issue.get("severity") == "warning"
+        ]
+        if errors:
             console.print(
-                f"[yellow]вљ  QA found {len(report.errors)} error(s) and "
-                f"{len(report.warnings)} warning(s). See logs.[/yellow]"
+                f"[yellow]⚠ QA found {len(errors)} error(s) and {len(warnings)} warning(s). "
+                "See logs.[/yellow]"
             )
-            for issue in report.errors[:5]:
-                logger.error("QA %s: %s (%s)", issue.code, issue.message, issue.path)
-        elif report.warnings:
-            logger.info("QA audit: %s", report.summary())
+            for issue in errors[:5]:
+                logger.error("QA %s: %s (%s)", issue.get("code"), issue.get("message"), issue.get("path"))
         else:
-            logger.info("QA audit passed: %s", report.summary())
+            logger.info("QA audit: %s", report.get("summary", "not available"))
 
     # ------------------------------------------------------------------ create
     def initialize_base(
@@ -252,7 +183,7 @@ class LiteratureAgent:
                 f"[bold yellow]Requirements:[/bold yellow] {requirements}\n"
                 f"[bold green]Vault Target:[/bold green] {vault_path}\n"
                 f"[bold magenta]Target Papers Goal:[/bold magenta] {max_papers} | [bold blue]Mode:[/bold blue] {mode_label}",
-                title=f"рџљЂ [bold green]LitGraphAgent Initializing: '{base_id}'[/bold green]",
+                title=f"🚀 [bold green]LitGraphAgent Initializing: '{base_id}'[/bold green]",
                 border_style="cyan",
             )
         )
@@ -266,72 +197,26 @@ class LiteratureAgent:
             created_at=utc_now_iso(),
             updated_at=utc_now_iso(),
         )
-        state.search_plan = self._plan_search(topic, requirements)
 
-        valid_candidates, _ = self._collect_candidates(
-            topic, requirements, max_papers, state.search_plan
+        final = self._run_graph(
+            mode="create",
+            base=state,
+            topic=topic,
+            requirements=requirements,
+            directive="",
+            max_papers=max_papers,
+            deep_scan=deep_scan,
         )
-        if not valid_candidates:
-            console.print("[red]вќЊ No papers passed validation.[/red]")
-            self.flush_to_vault(state, vault)
-            self._audit(state, vault)
+        state = LiteratureBaseState(**final["base"])
+        selected_count = len(final.get("selected") or [])
+
+        if not state.papers:
+            console.print("[red]❌ No papers passed validation.[/red]")
+            self._report_qa()
             return state, vault
 
-        # STEP 2: Ranking & Cutoff
-        valid_candidates.sort(key=lambda item: item.objective_scientific_score, reverse=True)
-        scores = [paper.objective_scientific_score for paper in valid_candidates]
-        if settings.enable_elbow_cutoff:
-            cutoff_k = find_elbow_cutoff(
-                scores,
-                min_k=min(len(scores), settings.min_papers_per_run),
-                max_k=max_papers,
-            )
-        else:
-            cutoff_k = min(len(scores), max_papers)
-        selected_candidates = valid_candidates[:cutoff_k]
-
-        # STEP 3: Paper Content Synthesis
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[bold blue]{task.description}"),
-            BarColumn(bar_width=25, style="cyan", complete_style="green"),
-            TaskProgressColumn(),
-            TimeElapsedColumn(),
-            console=console,
-            refresh_per_second=2,
-            transient=True,
-        ) as progress:
-            synth_task = progress.add_task(
-                "[magenta]рџ§  Ingesting selected papers...", total=len(selected_candidates)
-            )
-            for paper in selected_candidates:
-                self._ingest_paper(paper, state, deep_scan)
-                progress.advance(synth_task)
-
-            self.bus.request("graph", "rebuild_graph", state=state, papers=selected_candidates)
-            self.bus.request("graph", "save_state", state=state)
-
-            # STEP 4: Batch Concept Synthesis & Master Files
-            master_task = progress.add_task("[blue]рџ•ёпёЏ Synthesizing knowledge graph...", total=4)
-
-            self.bus.request("llm", "define_concepts", state=state)
-            progress.advance(master_task)
-
-            self.bus.request("llm", "bibliography", state=state)
-            progress.advance(master_task)
-
-            self.bus.request("llm", "link_network", state=state)
-            progress.advance(master_task)
-
-            self.bus.request("llm", "overview", state=state)
-            self.flush_to_vault(state, vault)
-            progress.advance(master_task)
-
-        self._audit(state, vault)
-
-        # Output Summary Table
         table = Table(
-            title=f"рџ“Љ Selected Papers ({len(selected_candidates)} chosen)", border_style="magenta"
+            title=f"📊 Selected Papers ({selected_count} chosen)", border_style="magenta"
         )
         table.add_column("Rank", justify="center")
         table.add_column("Title", style="white", max_width=45)
@@ -339,7 +224,8 @@ class LiteratureAgent:
         table.add_column("Score", justify="right", style="bold yellow")
         table.add_column("Weight (0-1)", justify="right", style="green")
 
-        for index, paper in enumerate(selected_candidates, 1):
+        selected = [state.papers[item["id"]] for item in (final.get("selected") or []) if item["id"] in state.papers]
+        for index, paper in enumerate(selected, 1):
             table.add_row(
                 str(index),
                 paper.title,
@@ -355,10 +241,11 @@ class LiteratureAgent:
                 f"[bold cyan]Total Verified Sources:[/bold cyan] {len(state.papers)}\n"
                 f"[bold magenta]Full Concept Hubs Created:[/bold magenta] {len(state.concepts)}\n"
                 f"[bold yellow]Graph Connections:[/bold yellow] {len(state.edges)}",
-                title="вњЁ [bold green]Research Knowledge Graph Ready![/bold green]",
+                title="✨ [bold green]Research Knowledge Graph Ready![/bold green]",
                 border_style="green",
             )
         )
+        self._report_qa()
         return state, vault
 
     # ------------------------------------------------------------------ update
@@ -374,87 +261,46 @@ class LiteratureAgent:
             Panel(
                 f"[bold yellow]Directive:[/bold yellow] {directive_or_query}\n"
                 f"[bold cyan]Base:[/bold cyan] {state.base_id}",
-                title="рџ”„ [bold yellow]Expanding Literature Base[/bold yellow]",
+                title="🔄 [bold yellow]Expanding Literature Base[/bold yellow]",
                 border_style="yellow",
             )
         )
-        self.graph_agent = GraphAgent(vault)
-        self.bus.register(self.graph_agent)
+        self._bind_vault(vault)
         state.updated_at = utc_now_iso()
-        valid_candidates: List[Paper] = []
-        seen_paper_ids: Set[str] = set(state.papers.keys())
-
         combined_topic = f"{state.topic} {directive_or_query}"
-        state.search_plan = self._plan_search(
-            combined_topic,
-            state.requirements,
-            context=f"Existing base '{state.base_id}' with {len(state.papers)} papers.",
-        )
-        raw_candidates = self.bus.request(
-            "retrieval",
-            "search",
-            query=directive_or_query,
-            top_k=settings.max_search_candidates,
-            engines=state.search_plan.get("primary") or None,
-            fallback_engines=state.search_plan.get("fallback") or None,
-            min_results=settings.search_fallback_min_results,
-        )
-        candidates_to_eval = [
-            raw for raw in raw_candidates if raw.get("id") not in seen_paper_ids
-        ][: settings.candidate_eval_limit]
+        before = len(state.papers)
 
-        for raw in candidates_to_eval:
-            seen_paper_ids.add(raw["id"])
-            paper = Paper(**raw)
-            if self.bus.request(
-                "llm",
-                "validate",
-                paper=paper,
-                topic=combined_topic,
-                requirements=state.requirements,
-            ):
-                compute_scientific_metrics(paper)
-                valid_candidates.append(paper)
-                if len(valid_candidates) >= max_new_papers:
-                    break
-            else:
-                logger.info("Rejected %r: %s", paper.title, paper.topic_relevance_reason)
+        final = self._run_graph(
+            mode="update",
+            base=state,
+            topic=combined_topic,
+            requirements=state.requirements,
+            directive=directive_or_query,
+            max_papers=max_new_papers,
+            deep_scan=deep_scan,
+        )
+        updated = LiteratureBaseState(**final["base"])
+        added = len(updated.papers) - before
 
-        if not valid_candidates:
+        if added <= 0:
             console.print("[yellow]No new candidates satisfied criteria.[/yellow]")
-            self.bus.request("graph", "save_state", state=state)
-            self._audit(state, vault)
-            return state
-
-        batch = valid_candidates[:max_new_papers]
-        for paper in batch:
-            self._ingest_paper(paper, state, deep_scan)
-
-        self.bus.request("graph", "rebuild_graph", state=state, papers=list(state.papers.values()))
-        self.bus.request("graph", "save_state", state=state)
-
-        self.bus.request("llm", "define_concepts", state=state)
-        self.bus.request("llm", "bibliography", state=state)
-        self.bus.request("llm", "link_network", state=state)
-        self.bus.request("llm", "overview", state=state)
-        self.flush_to_vault(state, vault)
-        self._audit(state, vault)
-
-        console.print(
-            f"[bold green]вњ“ Base successfully updated with {len(batch)} new nodes![/bold green]"
-        )
-        return state
+        else:
+            console.print(
+                f"[bold green]✓ Base successfully updated with {added} new nodes![/bold green]"
+            )
+        self._report_qa()
+        return updated
 
     # ------------------------------------------------------------------- vault
     def flush_to_vault(self, state: LiteratureBaseState, vault: ObsidianVaultManager) -> None:
-        if self.graph_agent is None or self.graph_agent.vault is not vault:
-            self.graph_agent = GraphAgent(vault)
-            self.bus.register(self.graph_agent)
-        self.bus.request("graph", "flush", state=state, activity=self.bus.history)
+        self._bind_vault(vault)
+        if self.graph_agent is None:
+            raise RuntimeError("Graph agent is not bound to a vault")
+        self.graph_agent.flush(state, activity=self.activity)
 
     # -------------------------------------------------------------------- team
     def team_table(self) -> Table:
-        table = Table(title="рџ¤– LitGraphAgent Team", border_style="cyan")
+        table = Table(title="🤖 LitGraphAgent Team", border_style="cyan")
         table.add_column("Role", style="bold")
         table.add_column("Owner")
         table.add_column("Agent", style="green")
@@ -468,4 +314,3 @@ class LiteratureAgent:
                 Text(role.responsibility),
             )
         return table
-

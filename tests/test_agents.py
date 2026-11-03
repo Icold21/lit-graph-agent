@@ -1,9 +1,6 @@
-﻿from lit_graph.agent.bus import AgentBus
-from lit_graph.agent.core import LiteratureAgent
-from lit_graph.agent.evaluation_agent import EvaluationAgent
-from lit_graph.agent.prompt_agent import PromptAgent
-from lit_graph.agent.retrieval_agent import RetrievalAgent
+﻿from lit_graph.agent.core import LiteratureAgent
 from lit_graph.agent.roles import TEAM_ORDER, TEAM_ROLES
+from lit_graph.agent.workflow import LiteratureWorkflow
 from lit_graph.storage.base_manager import LiteratureManager
 
 
@@ -19,30 +16,36 @@ def test_team_roles_cover_every_specialist():
     assert all(role.owner and role.handle for role in TEAM_ROLES.values())
 
 
-def test_bus_records_and_routes_messages(mock_llm, fake_search_engine):
-    bus = AgentBus()
-    retrieval = RetrievalAgent(fake_search_engine)
-    prompt = PromptAgent(mock_llm)
-    evaluation = EvaluationAgent()
-    for agent in (retrieval, prompt, evaluation):
-        bus.register(agent)
-
-    results = bus.request("retrieval", "search", query="test", top_k=3)
-    assert len(results) == 3
-
-    queries = bus.request(
-        "retrieval",
-        "suggest_queries",
-        topic="interpretability",
-        requirements="recent",
-        existing_queries=["interpretability"],
+def test_langgraph_exposes_every_pipeline_node(mock_llm, fake_search_engine, tmp_path):
+    agent = LiteratureAgent(llm=mock_llm, search_engine=fake_search_engine)
+    agent._open_vault(str(tmp_path / "graph"))
+    workflow = LiteratureWorkflow(
+        retrieval=agent.retrieval,
+        prompt=agent.prompt,
+        evaluation=agent.evaluation,
+        graph_agent=agent.graph_agent,
     )
-    assert queries == ["latent circuits", "attention head interpretability"]
+    compiled = workflow.build("create")
 
-    senders = {(message.sender, message.recipient, message.action) for message in bus.history}
-    assert ("lead", "retrieval", "search") in senders
-    assert ("lead", "retrieval", "suggest_queries") in senders
-    assert ("retrieval", "llm", "generate_sub_queries") in senders
+    nodes = set(compiled.get_graph().nodes)
+    assert {
+        "plan_request",
+        "choose_engines",
+        "finalize_plan",
+        "search",
+        "validate",
+        "rank_select",
+        "expand_citations",
+        "synthesize",
+        "rebuild_graph",
+        "define_concepts",
+        "bibliography",
+        "link_network",
+        "overview",
+        "flush",
+        "audit",
+    } <= nodes
+    assert compiled.checkpointer is not None
 
 
 def test_full_pipeline_uses_every_agent(mock_llm, fake_search_engine, tmp_path):
@@ -63,9 +66,11 @@ def test_full_pipeline_uses_every_agent(mock_llm, fake_search_engine, tmp_path):
     assert (vault.state_path).exists()
     assert (vault.vault_path / "_Agent_Activity.md").exists()
 
-    participants = {message.recipient for message in agent.bus.history}
-    assert {"retrieval", "llm", "graph", "qa"} <= participants
-    assert "graph" in agent.bus.registered()
+    recipients = {event["recipient"] for event in agent.activity}
+    actions = {event["action"] for event in agent.activity}
+    assert {"retrieval", "llm", "graph", "qa"} <= recipients
+    assert {"select_search_engines", "search", "validate", "rebuild_graph", "flush", "audit"} <= actions
+    assert agent.last_qa_report is not None
 
 
 def test_manager_persists_and_reloads_base(mock_llm, fake_search_engine, tmp_path):
@@ -87,9 +92,33 @@ def test_manager_persists_and_reloads_base(mock_llm, fake_search_engine, tmp_pat
     assert len(loaded.papers) == len(created.papers)
 
 
+def test_update_extends_a_persisted_base(mock_llm, fake_search_engine, tmp_path):
+    agent = LiteratureAgent(llm=mock_llm, search_engine=fake_search_engine)
+    manager = LiteratureManager(tmp_path, agent=agent)
+    manager.create_base("growing", "Topic", "Recent", max_papers=1)
+
+    fake_search_engine.set_candidates(
+        [
+            {
+                "id": "new_1",
+                "title": "A New Paper",
+                "authors": ["Alice Smith"],
+                "year": 2025,
+                "venue": "NeurIPS",
+                "abstract": "Circuits and induction heads.",
+                "citation_count": 42,
+                "influential_citation_count": 5,
+            }
+        ]
+    )
+    updated = manager.update_base("growing", "induction heads", max_new_papers=1)
+    assert updated is not None
+    assert "new_1" in updated.papers
+    assert updated.search_plan["primary"] == ["arxiv"]
+
+
 def test_create_refuses_to_overwrite_existing_base(mock_llm, fake_search_engine, tmp_path):
     agent = LiteratureAgent(llm=mock_llm, search_engine=fake_search_engine)
     manager = LiteratureManager(tmp_path, agent=agent)
     assert manager.create_base("dup", "Topic", "Recent", max_papers=1) is not None
     assert manager.create_base("dup", "Other", "Recent", max_papers=1) is None
-
