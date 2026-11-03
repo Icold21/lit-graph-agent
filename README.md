@@ -1,211 +1,260 @@
 # 🕸️ LitGraphAgent
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Obsidian Ready](https://img.shields.io/badge/Obsidian-Knowledge%20Graph-purple.svg)](https://obsidian.md/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Tests: Pytest](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/astral-sh/ruff)
+[![Tests: Pytest](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 
-> **Autonomous Literature Research Agent that turns raw papers, preprints, and web sources into structured, interactive Obsidian Knowledge Graphs with scientometric ranking, Elbow-method cutoff, and publication-ready bibliographies.**
+> **Autonomous Literature Research Agent that turns raw papers, preprints, and web sources into structured, interactive Obsidian Knowledge Graphs with scientometric ranking, elbow cutoff, publication-ready bibliographies, and a five-role agent team.**
 
 ---
 
 ## 🌟 Key Features
 
-- 🔍 **Iterative Adaptive Search Loop:** Recursively crawls **arXiv** and **Semantic Scholar** (with web fallback), dynamically generating targeted sub-queries until the desired paper quota is fulfilled.
-- ⚡ **Optimized Fast Validation:** Consolidated single-round LLM auditing (evaluates topic relevance + strict constraints in one pass), providing 5x speedups for local models like **Qwen 2.5 (3B)**.
-- 📐 **Scientometric Ranking & Elbow Cutoff:** Ranks candidates by citation velocity ($V = \frac{C}{\text{Age}}$), influential citation ratio ($R_{inf}$), and log-scaled impact, applying the **Elbow / Kneedle Algorithm** to prune low-impact tails while respecting user-defined bounds (`MIN_PAPERS` to `MAX_PAPERS`).
-- 🕸️ **Obsidian Knowledge Graph Native:** Creates atomic Markdown notes linked via bidirectional `[[wikilinks]]`, concept hub clusters, and cross-citation networks (`cites` / `cited_by`).
-- 📄 **Publication-Ready Dual Bibliography:**
-  - `Formatted_Bibliography.md`: Clean, standardized reference list formatted strictly according to your target standard (**APA 7th, IEEE, Harvard, BibTeX, GOST**) — ready for direct copy-pasting into theses or journal manuscripts.
-  - `_Bibliography.md`: Interactive Obsidian master note with direct links to vault source notes.
-  - `references.bib`: Generated automatically when BibTeX format is selected for **LaTeX / Overleaf / Zotero** workflows.
-- 🔌 **Universal Model-Agnostic Engine:** Switch seamlessly between **Local Ollama** (Qwen 2.5, Llama 3.2), **DeepSeek**, **Groq**, **OpenAI**, or **OpenRouter** strictly via `.env` without modifying a single line of Python code.
-- 🔄 **Incremental Graph Mutations:** Update and expand existing research bases with targeted sub-directives without overwriting untouched notes.
+- 🤖 **Agent team architecture:** five specialist agents (Lead, Graph, Retrieval, QA, LLM) communicate through an explicit `AgentBus`; every pipeline step is a routed message.
+- 🔍 **Iterative adaptive search:** recursively queries **arXiv** and **Semantic Scholar** (with a web fallback), generating targeted sub-queries until the paper quota is met.
+- ⚡ **Fast consolidated validation:** one LLM pass checks topic relevance and strict requirements simultaneously.
+- 📐 **Scientometric ranking & elbow cutoff:** ranks candidates by citation velocity, influential-citation ratio and log-scaled impact, then prunes the low-impact tail with a curvature-based elbow (Kneedle-style) heuristic.
+- 🧹 **Concept canonicalization:** plural forms, casing and parenthetical acronyms (`GNNs` → `Graph Neural Networks`) are merged, and one-off noise concepts are filtered (`MIN_CONCEPT_PAPERS`).
+- 🕸️ **Obsidian-native graph:** atomic notes, bidirectional `[[wikilinks]]`, concept hubs, typed citation edges, and lightweight stubs for external references so links never dangle.
+- 🔁 **Persistent incremental updates:** the full research state is saved to `_state.json`, so `--update` works across separate CLI invocations and preserves existing definitions.
+- 💾 **Resilient networking:** retries with backoff for Semantic Scholar rate limits, a disk cache for searches/citations, and optional LLM response caching.
+- 📄 **Publication-ready bibliography:** `Formatted_Bibliography.md`, interactive `_Bibliography.md`, and `references.bib` for BibTeX workflows. Formatting is batched and has deterministic fallbacks.
+- 🔌 **Model-agnostic LLM layer:** DeepSeek, OpenAI, Groq, OpenRouter, Ollama, vLLM or any OpenAI-compatible endpoint via `.env`.
 
 ---
 
-## 🏗️ Architecture & Pipeline
+## 👥 Agent Team & Zones of Responsibility
+
+The project is organized around the five roles below. Each role owns a concrete agent and a set of modules; the Lead agent coordinates the others through the message bus.
+
+| Role | Owner | Agent | Responsibility |
+| --- | --- | --- | --- |
+| **Lead AI Engineer** | Иван Холодило ([@Icold21](https://github.com/Icold21)) | `LeadAIAgent` (`LiteratureAgent`) | End-to-end architecture, orchestration, agent bus, CLI, persistence |
+| **Graph & Knowledge Engineer** | Вадим Лялькин ([@Geniy_molodec](https://github.com/Geniy_molodec)) | `GraphAgent` | Graph ontology, `[[wikilinks]]`, concept canonicalization, Obsidian structure |
+| **Data / IR Engineer** | Нодар Чигладзе ([@NodarNeo](https://github.com/NodarNeo)) | `RetrievalAgent` | arXiv / Semantic Scholar / web APIs, search ranking, PDF retrieval, cache |
+| **QA / Evaluation Engineer** | Давид Чигладзе ([@David52228](https://github.com/David52228)) | `EvaluationAgent` | Quality bench, connectivity and format validation, CI |
+| **LLM Engineer** | Илья Синко ([@mang1ch5](https://github.com/mang1ch5)) | `PromptAgent` | Prompt engineering, abstract criteria filtering, synthesis and bibliographies |
+
+```bash
+litgraph --team   # show the role/agent ownership table
+```
+
+Detailed contribution history: [CONTRIBUTORS.md](CONTRIBUTORS.md). Agent protocol: [docs/AGENT_TEAM.md](docs/AGENT_TEAM.md). Ownership rules: [.github/CODEOWNERS](.github/CODEOWNERS).
+
+### How the agents interact
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      User Directive                         │
-│       (Topic, Strict Requirements, Citation Format)         │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                ┌──────────────▼──────────────┐
-                │   Adaptive Search Engine    │◄───┐ (Iterative sub-queries
-                │  (arXiv + S2 + Web Scraper) │    │  until target quota)
-                └──────────────┬──────────────┘    │
-                               │                   │
-                ┌──────────────▼──────────────┐    │
-                │ Consolidated LLM Validation │────┘
-                │  (Topic + Strict Criteria)  │
-                └──────────────┬──────────────┘
-                               │
-                ┌──────────────▼──────────────┐
-                │  Scientometric Ranking &    │
-                │     Elbow Method Cutoff     │
-                └──────────────┬──────────────┘
-                               │
-                ┌──────────────▼──────────────┐
-                │  Citation Graph Expansion   │
-                │   & English Synthesis       │
-                └──────────────┬──────────────┘
-                               │
-        ┌──────────────────────▼──────────────────────┐
-        │          Obsidian Knowledge Vault           │
-        │  ├── Formatted_Bibliography.md (Clean copy) │
-        │  ├── _Overview_Synthesis.md                 │
-        │  ├── _Bibliography.md (references.bib)      │
-        │  ├── Sources/ (Atomic Literature Notes)     │
-        │  └── Concepts/ (Concept Graph Hubs)         │
-        └─────────────────────────────────────────────┘
+                            AgentBus (message log → _Agent_Activity.md)
+                                            │
+  User ──► LeadAIAgent (LiteratureAgent) ───┼──────────────────────────────────┐
+                │                           │                                  │
+                ├─► RetrievalAgent ─────────┤ search / citations / PDF pages   │
+                │      └─► PromptAgent ─────┘ (asks for next search queries)   │
+                │                                                              │
+                ├─► PromptAgent ────────────► validate / summarize / define    │
+                │                                                              │
+                ├─► GraphAgent ─────────────► canonicalize / rebuild / flush   │
+                │                                                              │
+                └─► EvaluationAgent ────────► audit vault + state ─────────────┘
+```
+
+---
+
+## 🏗️ Pipeline
+
+```
+User Directive (topic, requirements, format, quota, --deep)
+        │
+        ▼
+LeadAIAgent ──► RetrievalAgent: search + deduplicate + pre-rank
+        │
+        ▼
+LeadAIAgent ──► PromptAgent: consolidated validation (topic + requirements)
+        │
+        ▼
+Scientometric ranking + elbow cutoff (MIN_PAPERS … MAX_PAPERS)
+        │
+        ▼
+RetrievalAgent: citation expansion (+ page-level PDF scan in --deep)
+        │
+        ▼
+PromptAgent: paper summaries, batched concept definitions, bibliography,
+             typed cross-links, master literature review
+        │
+        ▼
+GraphAgent: concept canonicalization, node weights, wikilinks, Obsidian notes
+        │
+        ▼
+EvaluationAgent: connectivity/format/state audit ──► QA report
 ```
 
 ---
 
 ## 📦 Installation
 
-### 1. Clone the repository
 ```bash
 git clone https://github.com/Icold21/LitGraphAgent.git
 cd LitGraphAgent
-```
-
-### 2. Set up a virtual environment
-```bash
 python -m venv .venv
 
-# On Windows:
+# Windows
 .venv\Scripts\activate
-
-# On macOS / Linux:
+# macOS / Linux
 source .venv/bin/activate
+
+pip install -e ".[dev]"
 ```
 
-### 3. Install in development mode
-```bash
-pip install -e .
-```
+`pypdf` is a core dependency (required for `--deep`), not an optional extra.
 
 ---
 
 ## ⚙️ Configuration (`.env`)
 
-Create a `.env` file in the project root:
+```bash
+# Universal LLM (any OpenAI-compatible endpoint)
+LLM_API_KEY=sk-your-key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-chat
+
+# Optional networking
+LLM_TIMEOUT=90
+LLM_MAX_RETRIES=3
+LLM_CACHE_ENABLED=false      # cache LLM responses by prompt hash
+SEMANTIC_SCHOLAR_API_KEY=
+HTTP_TIMEOUT=15
+HTTP_MAX_RETRIES=3
+CACHE_ENABLED=true
+CACHE_TTL_HOURS=168
+
+# Vault storage (relative paths resolve against the project root)
+DEFAULT_VAULTS_DIR=./vaults
+
+# Scientometric limits
+MAX_PAPERS_PER_RUN=5
+MIN_PAPERS_PER_RUN=2
+MAX_SEARCH_CANDIDATES=15
+CANDIDATE_EVAL_LIMIT=8
+CITATION_EXPANSION_LIMIT=2
+ENABLE_ELBOW_CUTOFF=true
+
+# Knowledge-graph quality
+MIN_CONCEPT_PAPERS=2        # drop concepts that appear in fewer papers
+MAX_CONCEPTS_PER_PAPER=8
+CONCEPT_BATCH_SIZE=12       # concepts per LLM response (avoids truncation)
+BIBLIOGRAPHY_BATCH_SIZE=20
+```
+
+Profiles:
 
 ```bash
-# ==============================================================================
-# 🎯 Option A: Local Ollama (100% Free, Zero Rate Limits, Runs Offline)
-# ==============================================================================
+# Local Ollama
 LLM_API_KEY=ollama
 LLM_BASE_URL=http://localhost:11434/v1
 LLM_MODEL=qwen2.5:3b
 
-# ==============================================================================
-# 🎯 Option B: DeepSeek (High Intelligence & Affordable)
-# ==============================================================================
-# LLM_API_KEY=sk-your-deepseek-api-key
-# LLM_BASE_URL=https://api.deepseek.com
-# LLM_MODEL=deepseek-chat
-
-# ==============================================================================
-# 🎯 Option C: Groq Cloud (Ultra Fast Cloud Inference)
-# ==============================================================================
-# LLM_API_KEY=gsk_your-groq-key
-# LLM_BASE_URL=https://api.groq.com/openai/v1
-# LLM_MODEL=llama-3.3-70b-versatile
-
-# ==============================================================================
-# Vault Storage & Scientometric Limits
-# ==============================================================================
-SEMANTIC_SCHOLAR_API_KEY=
-DEFAULT_VAULTS_DIR=./vaults
-MAX_PAPERS_PER_RUN=5
-MIN_PAPERS_PER_RUN=2
-MAX_SEARCH_CANDIDATES=15
-CITATION_EXPANSION_LIMIT=3
-ENABLE_ELBOW_CUTOFF=true
+# Groq
+LLM_API_KEY=gsk_...
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_MODEL=llama-3.3-70b-versatile
 ```
 
 ---
 
-## 🚀 Quickstart & Usage
-
-### 1. Build a New Research Knowledge Base
-Run `litgraph` directly from your terminal:
+## 🚀 Usage
 
 ```bash
+# Create a new knowledge base
 litgraph \
   --id "transformer_circuits" \
   --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
   --requirements "Peer-reviewed or high-impact preprints published after 2021" \
   --format "APA 7th" \
   --max-papers 5
-```
 
-### 2. Incrementally Expand an Existing Base
-Add new research depth or sub-topics without losing previous notes:
-
-```bash
+# Expand an existing base (works across separate CLI runs thanks to _state.json)
 litgraph \
   --id "transformer_circuits" \
-  --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
   --update "Sparse Autoencoders and Superposition in Language Models" \
   --max-papers 3
+
+# Deep mode: download open-access PDFs and cite concept mentions by page
+litgraph --id "transformer_circuits" --update "Induction heads" --deep
+
+# Inspect, audit, or remove bases
+litgraph --list
+litgraph --check --id "transformer_circuits"
+litgraph --delete --id "transformer_circuits"
+
+# Team / agent ownership
+litgraph --team
 ```
+
+Additional flags: `--no-cache`, `--no-elbow`, `--verbose`, `--version`.
 
 ---
 
 ## 📖 Exploring in Obsidian
 
-1. Open the **Obsidian** app.
-2. Click **"Open folder as vault"**.
-3. Select the generated directory: `./vaults/transformer_circuits`.
-4. Open the **Graph view** (`Ctrl/Cmd + G`) to explore your interactive 3D knowledge network!
+1. Open **Obsidian** → **Open folder as vault**.
+2. Select `./vaults/transformer_circuits`.
+3. Press `Ctrl/Cmd + G` for the graph view.
 
-### Generated Vault Structure
+The graph preset is installed on first use and **merged, not overwritten**, so your manual graph settings survive later runs.
+
+### Generated vault structure
+
 ```text
 vaults/transformer_circuits/
-├── Formatted_Bibliography.md    # Pure literature list (clean copy for Word/LaTeX)
-├── _Bibliography.md             # Interactive Obsidian bibliography with [[links]]
-├── _Overview_Synthesis.md       # Master executive review synthesized in English
-├── references.bib               # (Generated if BibTeX format is chosen)
-├── Sources/                     # Atomic notes for each verified paper
-│   ├── In-context Learning and Induction Heads.md
-│   ├── Toy Models of Superposition.md
-│   └── ...
-└── Concepts/                    # Conceptual graph hubs
-    ├── Induction Heads.md
-    ├── Sparse Autoencoders.md
-    └── Superposition.md
+├── Formatted_Bibliography.md    # clean copy-paste bibliography
+├── _Bibliography.md             # interactive bibliography with [[links]]
+├── _Overview_Synthesis.md       # master review + index + typed citation edges
+├── _Agent_Activity.md           # which agent did what (hand-off log)
+├── _state.json                  # persistent research state (incremental updates)
+├── references.bib               # generated for BibTeX format
+├── Sources/
+│   ├── <paper title>.md         # atomic literature notes
+│   └── <external reference>.md  # lightweight citation stubs
+└── Concepts/                    # canonical concept hubs
 ```
 
 ---
 
-## 🧪 Testing Suite
-
-Run the test suite with `pytest`:
+## 🧪 Quality & Testing
 
 ```bash
-pytest
+pytest -q
+ruff check lit_graph tests
+litgraph --check --id your_base
 ```
+
+The QA agent validates:
+
+- unresolved wikilinks and orphan notes;
+- required YAML frontmatter per note type;
+- duplicate note names and duplicate graph edges;
+- concept → paper → concept hub integrity;
+- non-empty bibliographies and overviews;
+- canonical concept coverage.
+
+CI runs the full suite on Python 3.10–3.13 and fails on lint errors.
 
 ---
 
 ## 👥 Contributors
 
-Thanks to all the contributors who built and improved this project:
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the detailed, mapped list of contributions.
 
-- [@Icold21](https://github.com/Icold21) (Project Lead)
-- [@David200109](https://github.com/David200109)
-- [@Geniy-molodec](https://github.com/Geniy-molodec)
-- [@NodarChigladse](https://github.com/NodarChigladse)
-- [@podorogn1k](https://github.com/podorogn1k)
+- **Иван Холодило** ([@Icold21](https://github.com/Icold21)) — Lead AI Engineer
+- **Вадим Лялькин** ([@Geniy_molodec](https://github.com/Geniy_molodec)) — Graph & Knowledge Engineer
+- **Нодар Чигладзе** ([@NodarNeo](https://github.com/NodarNeo)) — Data / IR Engineer
+- **Давид Чигладзе** ([@David52228](https://github.com/David52228)) — QA / Evaluation Engineer
+- **Илья Синко** ([@mang1ch5](https://github.com/mang1ch5)) — LLM Engineer
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **MIT License**. See [LICENSE](LICENSE).

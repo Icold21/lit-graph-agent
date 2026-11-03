@@ -1,0 +1,39 @@
+# Default owner: Lead AI Engineer (architecture, orchestration, release)
+* @Icold21
+
+# Lead AI Engineer — orchestration, CLI, configuration
+/lit_graph/agent/core.py @Icold21
+/lit_graph/agent/bus.py @Icold21
+/lit_graph/agent/roles.py @Icold21
+/lit_graph/cli.py @Icold21
+/lit_graph/config.py @Icold21
+/lit_graph/__init__.py @Icold21
+
+# Graph & Knowledge Engineer — ontology, wikilinks, Obsidian
+/lit_graph/agent/graph_agent.py @Geniy_molodec
+/lit_graph/agent/concepts.py @Geniy_molodec
+/lit_graph/storage/ @Geniy_molodec
+/lit_graph/models.py @Geniy_molodec
+
+# Data / IR Engineer — academic APIs, search, cache, PDFs
+/lit_graph/agent/retrieval_agent.py @NodarNeo
+/lit_graph/search/ @NodarNeo
+/lit_graph/utils/http.py @NodarNeo
+/lit_graph/utils/cache.py @NodarNeo
+
+# QA / Evaluation Engineer — quality bench, CI
+/lit_graph/agent/evaluation_agent.py @David52228
+/lit_graph/qa/ @David52228
+/tests/ @David52228
+/.github/workflows/ @David52228
+
+# LLM Engineer — prompts, validation, synthesis
+/lit_graph/agent/prompt_agent.py @mang1ch5
+/lit_graph/agent/validator.py @mang1ch5
+/lit_graph/agent/synthesizer.py @mang1ch5
+/lit_graph/llm/ @mang1ch5
+
+# Documentation and role map
+/README.md @Icold21
+/CONTRIBUTORS.md @Icold21
+/docs/ @Icold21

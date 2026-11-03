@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 from typing import List
+
 from ..models import Paper
 
 
@@ -38,26 +39,39 @@ def compute_scientific_metrics(paper: Paper, current_year: int | None = None) ->
 
 def find_elbow_cutoff(scores: List[float], min_k: int = 3, max_k: int = 8) -> int:
     """
-    Finds the optimal cutoff point using discrete drop-off and elbow detection.
-    Accurately identifies the boundary BEFORE the curve drops into the low-impact tail.
+    Finds the optimal cutoff using an elbow/knee heuristic based on the change
+    of consecutive score drops (a discrete Kneedle-style second derivative).
+
+    The knee is the point where a steep head transitions into a flat tail.  We
+    compute first differences (drops between ranked papers), then their change
+    (curvature).  The largest positive curvature marks the boundary right
+    before the low-impact tail.
+
+    ``min_k`` / ``max_k`` are hard bounds; the result always satisfies them.
     """
     n = len(scores)
+    if n == 0:
+        return 0
+
+    max_k = max(1, min(max_k, n))
+    min_k = max(1, min(min_k, max_k))
     if n <= min_k:
-        return min(n, max_k)
+        return max_k
 
-    if scores[0] == scores[-1]:
-        return min(n, max_k)
+    # Scores are expected in descending order; the elbow is meaningless otherwise.
+    ordered = sorted(scores, reverse=True)
+    if ordered[0] == ordered[-1]:
+        return max_k
 
-    # Calculate first differences (drop-offs between consecutive papers)
-    drops = [scores[i] - scores[i + 1] for i in range(n - 1)]
+    drops = [ordered[i] - ordered[i + 1] for i in range(n - 1)]
+    curvature = [drops[i] - drops[i + 1] for i in range(len(drops) - 1)]
 
-    # Find the index where the steepest drop occurs
-    max_drop_idx = 0
-    max_drop = -1.0
-    for i, d in enumerate(drops):
-        if d > max_drop:
-            max_drop = d
-            max_drop_idx = i
+    if curvature:
+        # A large positive curvature at i means the drop after rank i+1 is much
+        # steeper than the next one, so the head ends after i+1 papers.
+        knee_index = max(range(len(curvature)), key=lambda i: (curvature[i], -i))
+        optimal_k = knee_index + 1
+    else:
+        optimal_k = min_k
 
-    optimal_k = max_drop_idx + 1
-    return max(min_k, min(optimal_k, max_k, n))
+    return max(min_k, min(optimal_k, max_k))

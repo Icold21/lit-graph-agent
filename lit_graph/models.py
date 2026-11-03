@@ -24,8 +24,9 @@ class Paper(BaseModel):
     year: Optional[int] = None
     venue: Optional[str] = None
     doi_or_url: Optional[str] = None
+    pdf_url: Optional[str] = None
     abstract: str = ""
-    
+
     # Scientometric metrics
     citation_count: int = 0
     influential_citation_count: int = 0
@@ -34,27 +35,30 @@ class Paper(BaseModel):
     objective_scientific_score: float = 0.0
     normalized_weight: float = 0.5  # Continuous smooth weight from 0.0 to 1.0
     is_elbow_selected: bool = False
-    
+
     # Validation
     topic_relevance_score: float = 0.0
     topic_relevance_reason: str = ""
     requirements_met: bool = False
     requirements_reason: str = ""
     scientific_value_score: float = 0.0
-    
+
     # Synthesis & Concepts Grounding
     summary_en: str = ""
     key_findings_en: List[str] = Field(default_factory=list)
     methodology_en: str = ""
     limitations_en: str = ""
     extracted_concepts: List[str] = Field(default_factory=list)
+    # Raw LLM output kept so concept canonicalization can be re-run on updates
+    # without losing concepts that were filtered out earlier.
+    extracted_concepts_all: List[str] = Field(default_factory=list)
     concept_mentions: List[ConceptMention] = Field(default_factory=list)
-    
+
     # Graph connections
     referenced_paper_titles: List[str] = Field(default_factory=list)
     citing_paper_titles: List[str] = Field(default_factory=list)
     related_paper_titles: List[str] = Field(default_factory=list)
-    
+
     formatted_citation: str = ""
 
 
@@ -76,3 +80,16 @@ class LiteratureBaseState(BaseModel):
     bibliography_en: str = ""
     created_at: str = ""
     updated_at: str = ""
+
+    def add_edge(self, edge: GraphEdge) -> bool:
+        """Append a graph edge unless an identical one already exists."""
+        key = (edge.source_title.strip().lower(), edge.target_title.strip().lower(), edge.relation_type)
+        for existing in self.edges:
+            if (
+                existing.source_title.strip().lower(),
+                existing.target_title.strip().lower(),
+                existing.relation_type,
+            ) == key:
+                return False
+        self.edges.append(edge)
+        return True
