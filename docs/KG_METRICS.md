@@ -78,9 +78,9 @@ MR = (1 / |Q|) * Σ rank_i
 | `ogbl-wikikg2` | Link prediction в Wikidata | MRR, Hits@1/10/100 | Официальный OGB-evaluator; свои сплиты ломают сравнимость |
 | `ogbl-biokg` | Link prediction в биомедицинском KG | MRR, Hits@1/10/100 | Мульти-реляционный, другой домен |
 
-Ориентиры: сильные модели на `FB15k-237` обычно дают примерно `0.33–0.36`
-MRR, на `WN18RR` — примерно `0.45–0.55` MRR. Точные SOTA-числа смотрите в
-официальном leaderboard: они меняются.
+Ориентиры: лучшие модели на `FB15k-237` дают около `0.42` MRR, на `WN18RR` —
+около `0.58–0.61` MRR. Точные SOTA-числа смотрите в официальном leaderboard:
+они меняются. Подробная таблица — в разделе 11.
 
 ### 2.7. Что ещё влияет на число
 
@@ -282,7 +282,42 @@ MAP = mean(average precision)
 | Node classification | Accuracy / F1 | ROC-AUC, AP |
 | Vault quality | Orphan/unresolved rate | schema conformance, coverage |
 
-## 11. Полезные ссылки
+## 11. Ориентиры SOTA (на 2026 год)
+
+Числа ниже — это **порядок величины** для стандартных постановок, а не
+вечный рекорд. SOTA зависит от сплита, filtered/raw, использования текста и
+официального evaluator.
+
+| Бенчмарк | Постановка | SOTA-ориентир | Модель / источник |
+| --- | --- | --- | --- |
+| `FB15k-237` | transductive, filtered | MRR ≈ **0.42** | лучшие модели 2024–2025; NBFNet 0.415, A*Net 0.411 |
+| `WN18RR` | transductive, filtered | MRR ≈ **0.58–0.61** | kNN-KGE 0.579; NBFNet 0.551 |
+| `ogbl-wikikg2` | OGB official | MRR **0.739** test / **0.751** val | RelEns (OGB leaderboard) |
+| `ogbl-wikikg2` | OGB official | MRR 0.731 test | StarGraph + TripleRE + Text |
+| `SciERC` | entity F1 | **73.4** | SURE (COLING 2025), SciBERT |
+| `SciERC` | relation F1 (`Rel`) | **56.9** | SURE (COLING 2025) |
+| `SciERC` | strict relation F1 (`Rel+`) | **44.3** | SURE (COLING 2025) |
+| `SciERC` | entity / relation / strict | 69.9 / 53.2 / 41.6 | PL-Marker (2022), предыдущий SOTA |
+
+Дополнительные ориентиры по `WN18RR` (kNN-KGE): `Hits@1 = 0.525`,
+`Hits@3 = 0.604`, `Hits@10 = 0.683`. У NBFNet: `0.497 / 0.573 / 0.666`.
+
+### 11.1. Почему числа могут отличаться
+
+- На `FB15k-237` часть лидербордов показывает `MRR` около `0.52` — это
+  постановка **with mentions / KB completion with text**, а не чистый
+  transductive link prediction. Сравнивать с `0.42` нельзя.
+- На `WN18RR` числа `0.70+` часто относятся к inductive-сплитам или
+  text-augmented постановкам. Стандартный transductive-ориентир — `~0.58`.
+- OGB-лидерборд обновляется редко; верхняя строка `RelEns` датируется
+  2023 годом, но остаётся официальным ориентиром.
+- SciERC-числа сильно зависят от NER-результатов: SURE использует NER от
+  HGERE, поэтому сравнивать нужно при одинаковом NER-входе.
+- Наши `concept F1` (0.349 exact / 0.501 relaxed / 0.549 content relaxed) —
+  это **не** SciERC entity F1 и **не** relation F1. Это другая постановка:
+  канонические концепты, а не копирование спанов.
+
+## 12. Полезные ссылки
 
 - SciERC: <https://nlp.cs.washington.edu/sciIE/>
 - FB15k-237: <https://paperswithcode.com/dataset/fb15k-237>
