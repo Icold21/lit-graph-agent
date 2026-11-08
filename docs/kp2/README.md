@@ -7,7 +7,7 @@
 | [KP2_REPORT.md](KP2_REPORT.md) | Полный отчёт по девяти пунктам КП2 |
 | [KP2_SLIDES.md](KP2_SLIDES.md) | Структура презентации и текст выступления на 2 минуты |
 | [kp2_presentation.pptx](kp2_presentation.pptx) | Готовая презентация, 7 слайдов с заметками докладчика |
-| [kp2_presentation_kp1_style.pptx](kp2_presentation_kp1_style.pptx) | Вариант в стиле КП1: 8 слайдов, два мема с Тони Старком |
+| [kp2_presentation_kp1_style.pptx](kp2_presentation_kp1_style.pptx) | Вариант в стиле КП1: 8 слайдов, два мема с Тони Старком без подписей |
 | [DEMO.md](DEMO.md) | Сценарий демонстрации прототипа и чек-лист скриншотов |
 | [CONTRIBUTIONS.md](CONTRIBUTIONS.md) | Зоны ответственности и доказательная база вклада |
 | [assets/architecture.png](assets/architecture.png) | Диаграмма архитектуры |
