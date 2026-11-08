@@ -319,6 +319,7 @@ Project documents:
 - [docs/RETRIEVAL.md](docs/RETRIEVAL.md) — search routing, candidate collection and ranking;
 - [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md) — vault ontology and concept canonicalization;
 - [docs/LLM_LAYER.md](docs/LLM_LAYER.md) — prompts, validation and synthesis;
+- [docs/KG_METRICS.md](docs/KG_METRICS.md) — standard metrics for KG benchmarks and what to report;
 - [docs/kp2/README.md](docs/kp2/README.md) — milestone 2 report, slides, demo script and contribution evidence.
 
 ## Contributors
