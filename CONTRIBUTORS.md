@@ -30,6 +30,8 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/core.py`, `agent/workflow.py`, `agent/graph_state.py`, `agent/roles.py`, `cli.py`, `config.py`, `__init__.py`.
 
+**Docs and release evidence:** [README.md](README.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/kp2/KP2_REPORT.md](docs/kp2/KP2_REPORT.md), [docs/kp2/KP2_SLIDES.md](docs/kp2/KP2_SLIDES.md).
+
 ### Вадим Лялькин (@Geniy_molodec) — Graph & Knowledge Engineer
 
 **Zone:** graph ontology, `[[wikilinks]]`, Obsidian structure.
@@ -43,6 +45,8 @@ orchestrates every other agent through a LangGraph `StateGraph`
 - Owned `LiteratureManager` lifecycle (create/load/update/delete/list) and `graph_preset.json`.
 
 **Key files:** `agent/graph_agent.py`, `agent/concepts.py`, `storage/obsidian_vault.py`, `storage/base_manager.py`, `models.py`.
+
+**Documentation commit:** [`d53f184`](https://github.com/Icold21/LitGraphAgent/commit/d53f184) — [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
 
 ### Нодар Чигладзе (@NodarNeo) — Data / IR Engineer
 
@@ -61,6 +65,8 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/retrieval_agent.py`, `search/`, `utils/http.py`, `utils/cache.py`.
 
+**Documentation commit:** [`ab784c2`](https://github.com/Icold21/LitGraphAgent/commit/ab784c2) — [docs/RETRIEVAL.md](docs/RETRIEVAL.md) and [docs/kp2/DEMO.md](docs/kp2/DEMO.md).
+
 ### Давид Чигладзе (@David52228) — QA / Evaluation Engineer
 
 **Zone:** quality bench, connectivity and format validation.
@@ -72,7 +78,9 @@ orchestrates every other agent through a LangGraph `StateGraph`
 - Hardened CI: Python 3.10–3.13 matrix, `ruff check` now fails the build, `pytest` runs on every push/PR.
 - Added the `litgraph --check` command and severity-based reporting.
 
-**Key files:** `agent/evaluation_agent.py`, `qa/`, `tests/`, `.github/workflows/ci.yml`.
+**Key files:** `agent/evaluation_agent.py`, `qa/`, `tests/`, `.github/workflows/ci.yml`, `benchmarks/`.
+
+**Commit evidence:** [`6839548`](https://github.com/Icold21/LitGraphAgent/commit/6839548) — `qwen3.5:4b` SciERC result, plotting script and benchmark protocol.
 
 ### Илья Синко (@mang1ch5) — LLM Engineer
 
@@ -88,6 +96,8 @@ orchestrates every other agent through a LangGraph `StateGraph`
 - Implemented concept-grounded page citations for deep mode.
 
 **Key files:** `agent/prompt_agent.py`, `agent/validator.py`, `agent/synthesizer.py`, `llm/`.
+
+**Documentation commit:** [`31cd17d`](https://github.com/Icold21/LitGraphAgent/commit/31cd17d) — [docs/LLM_LAYER.md](docs/LLM_LAYER.md).
 
 ## Interaction map
 
