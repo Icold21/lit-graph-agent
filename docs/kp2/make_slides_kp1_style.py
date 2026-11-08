@@ -54,6 +54,19 @@ PALE_RED = RGBColor(0xFE, 0xE9, 0xE9)
 FONT = "Segoe UI"
 FONT_BOLD = "Segoe UI Semibold"
 
+# The deck uses only three type sizes: heading, body and small label.
+SIZE_HEADING = 40
+SIZE_BODY = 18
+SIZE_SMALL = 14
+
+
+def snap(size: float) -> int:
+    if size >= 24:
+        return SIZE_HEADING
+    if size >= 12:
+        return SIZE_BODY
+    return SIZE_SMALL
+
 
 # ---------------------------------------------------------------------------
 # primitives
@@ -107,7 +120,7 @@ def set_text(
     run = paragraph.add_run()
     run.text = text
     run.font.name = font
-    run.font.size = Pt(size)
+    run.font.size = Pt(snap(size))
     run.font.bold = bold
     run.font.color.rgb = color
 
@@ -291,13 +304,13 @@ def bullet_list(slide, x: float, y: float, w: float, h: float, items: list[str],
         run = paragraph.add_run()
         run.text = f"{marker}  "
         run.font.name = FONT
-        run.font.size = Pt(size)
+        run.font.size = Pt(snap(size))
         run.font.bold = True
         run.font.color.rgb = marker_color
         run = paragraph.add_run()
         run.text = item
         run.font.name = FONT
-        run.font.size = Pt(size)
+        run.font.size = Pt(snap(size))
         run.font.color.rgb = color
     return box
 
@@ -332,14 +345,14 @@ def slide_title(prs, blank):
         ("arXiv & Semantic Scholar", BLUE, PALE_BLUE),
     ]
     x = 0.78
-    y = 3.85
+    y = 3.75
     for text, color, pale in tags:
-        width = 0.24 + len(text) * 0.083
-        pill(slide, x, y, width, 0.36, text, pale, color, 9.5)
-        x += width + 0.10
-        if x > 7.2:
+        width = 0.52 + len(text) * 0.112
+        if x + width > 7.2:
             x = 0.78
-            y += 0.48
+            y += 0.46
+        pill(slide, x, y, width, 0.36, text, pale, color, 14)
+        x += width + 0.10
 
     shadow_card(slide, 0.78, 4.88, 6.35, 0.52, fill=CARD, line=BORDER, radius=0.16)
     textbox(slide, 1.0, 4.99, 5.9, 0.3, "github.com/Icold21/lit-graph-agent", 13, INK, True)
@@ -413,25 +426,25 @@ def slide_roadmap(prs, blank):
     no_shadow(line)
 
     milestones = [
-        (1.15, "6 ОКТ", "Базовый MVP", "Поиск, фильтрация,\nObsidian-заметки", GREEN, "готово", True),
-        (4.15, "5 НОЯ", "Модульный поиск", "Выбор движка,\nпервые метрики", GREEN, "готово", False),
-        (7.15, "25 НОЯ", "Тесты и стабилизация", "Калибровка,\nинкрементальные апдейты", AMBER, "в работе", True),
-        (10.15, "15 ДЕК", "Финальный релиз", "Метрики, демо,\nдокументация", BLUE, "по плану", False),
+        (1.00, "6 ОКТ", "Базовый MVP", "Поиск, фильтрация,\nObsidian-заметки", GREEN, "готово", True),
+        (4.00, "5 НОЯ", "Модульный поиск", "Выбор движка,\nпервые метрики", GREEN, "готово", False),
+        (7.00, "25 НОЯ", "Стабилизация", "Тесты, калибровка,\nапдейты", AMBER, "в работе", True),
+        (10.00, "15 ДЕК", "Финальный релиз", "Метрики, демо,\nдокументация", BLUE, "по плану", False),
     ]
     for x, date, title, body, accent, status, above in milestones:
-        dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x + 0.95), Inches(3.44), Inches(0.30), Inches(0.30))
+        dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x + 1.05), Inches(3.44), Inches(0.30), Inches(0.30))
         dot.fill.solid()
         dot.fill.fore_color.rgb = accent
         dot.line.color.rgb = WHITE
         dot.line.width = Pt(3)
         no_shadow(dot)
-        textbox(slide, x + 0.52, 3.02, 1.2, 0.25, date, 10.5, accent, True, align=PP_ALIGN.CENTER)
-        card_y = 1.55 if above else 3.92
-        shadow_card(slide, x, card_y, 2.55, 1.35, fill=CARD, line=BORDER, radius=0.10)
+        textbox(slide, x + 0.55, 3.02, 1.4, 0.25, date, 14, accent, True, align=PP_ALIGN.CENTER)
+        card_y = 1.40 if above else 3.90
+        shadow_card(slide, x, card_y, 2.85, 1.55, fill=CARD, line=BORDER, radius=0.10)
         accent_strip(slide, x + 0.16, card_y + 0.16, 0.07, 0.30, accent)
-        textbox(slide, x + 0.34, card_y + 0.14, 2.0, 0.3, title, 11.5, INK, True)
-        textbox(slide, x + 0.34, card_y + 0.50, 2.0, 0.65, body, 9.2, MUTED, line_spacing=1.05)
-        pill(slide, x + 1.55, card_y + 1.02, 0.84, 0.24, status, accent, WHITE, 7.5)
+        textbox(slide, x + 0.34, card_y + 0.12, 2.45, 0.30, title, 18, INK, True)
+        textbox(slide, x + 0.34, card_y + 0.52, 2.45, 0.58, body, 18, MUTED, line_spacing=1.05)
+        pill(slide, x + 1.38, card_y + 1.08, 1.28, 0.40, status, accent, WHITE, 14)
 
     textbox(slide, 0.78, 6.18, 11.7, 0.4, "Цель проекта не меняется: локальный граф смысловых концептов и автоматическая библиография.", 10.5, SOFT)
     footer(slide, 3)
@@ -522,7 +535,7 @@ def slide_metrics(prs, blank):
     stats = [
         ("0.349", "exact F1", TEAL, PALE_TEAL),
         ("0.501", "relaxed F1", BLUE, PALE_BLUE),
-        ("0.549", "content relaxed F1", PURPLE, PALE_PURPLE),
+        ("0.549", "content F1", PURPLE, PALE_PURPLE),
     ]
     for index, (value, label, accent, pale) in enumerate(stats):
         stat_card(slide, 0.75 + index * 2.15, 1.78, 1.95, 1.10, value, label, accent, pale)
@@ -609,7 +622,7 @@ def slide_risks(prs, blank):
         3.26,
     )
 
-    textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков и честный бенчмарк без фиктивного relation F1.", 9.5, SOFT)
+    textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков, честный бенчмарк.", 14, SOFT)
     footer(slide, 7)
     notes(slide, "1:40–1:55. Главный риск — узкая оценка, а не архитектура. До финала расширяем выборку и добавляем E2E-метрики.")
     return slide
