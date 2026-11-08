@@ -50,7 +50,6 @@ PALE_BLUE = RGBColor(0xE8, 0xEF, 0xFF)
 PALE_PURPLE = RGBColor(0xF1, 0xEA, 0xFF)
 PALE_AMBER = RGBColor(0xFF, 0xF4, 0xE5)
 PALE_RED = RGBColor(0xFE, 0xE9, 0xE9)
-YELLOW = RGBColor(0xFF, 0xF3, 0xB0)
 
 FONT = "Segoe UI"
 FONT_BOLD = "Segoe UI Semibold"
@@ -241,8 +240,9 @@ def image_asset(name: str) -> Path | None:
     return None
 
 
-def meme(slide, path: Path | None, x: float, y: float, w: float, h: float, caption: str) -> None:
-    card = shadow_card(slide, x - 0.08, y - 0.08, w + 0.16, h + 0.62, fill=CARD, line=BORDER, radius=0.06)
+def meme(slide, path: Path | None, x: float, y: float, w: float, h: float) -> None:
+    """Place a framed meme without any caption or speech bubble."""
+    shadow_card(slide, x - 0.08, y - 0.08, w + 0.16, h + 0.16, fill=CARD, line=BORDER, radius=0.06)
     if path:
         pic = slide.shapes.add_picture(str(path), Inches(x), Inches(y), Inches(w), Inches(h))
         pic.line.color.rgb = WHITE
@@ -250,15 +250,6 @@ def meme(slide, path: Path | None, x: float, y: float, w: float, h: float, capti
     else:
         shadow_card(slide, x, y, w, h, fill=CARD_ALT, line=BORDER, radius=0.04)
         textbox(slide, x + 0.2, y + h / 2 - 0.2, w - 0.4, 0.4, "мем загружается…", 12, SOFT, align=PP_ALIGN.CENTER)
-    bubble = shadow_card(slide, x - 0.02, y + h + 0.10, w + 0.04, 0.36, fill=YELLOW, line=RGBColor(0xE5, 0xC4, 0x4A), radius=0.18)
-    frame = bubble.text_frame
-    frame.margin_left = 0
-    frame.margin_right = 0
-    frame.margin_top = 0
-    frame.margin_bottom = 0
-    frame.vertical_anchor = MSO_ANCHOR.MIDDLE
-    set_text(frame, caption, 10, INK, True, PP_ALIGN.CENTER)
-    return card
 
 
 def check_card(slide, x: float, y: float, w: float, h: float, title: str, body: str, accent: RGBColor):
@@ -358,12 +349,11 @@ def slide_title(prs, blank):
 
     meme(
         slide,
-        image_asset("tony_graph"),
-        8.35,
-        1.10,
-        4.35,
-        3.45,
-        "Собрал граф литературы. За один запуск.",
+        image_asset("tony_hologram"),
+        7.90,
+        1.25,
+        4.90,
+        3.06,
     )
     notes(
         slide,
@@ -612,14 +602,12 @@ def slide_risks(prs, blank):
 
     meme(
         slide,
-        image_asset("tony_deadline"),
-        8.55,
-        2.00,
-        4.05,
-        2.95,
-        "План был хорош. До первого прогона.",
+        image_asset("tony_confident"),
+        8.35,
+        1.95,
+        4.40,
+        3.26,
     )
-    textbox(slide, 8.55, 5.55, 4.05, 0.5, "Главный риск — узкая оценка, а не архитектура.", 10.5, INK, True, align=PP_ALIGN.CENTER)
 
     textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков и честный бенчмарк без фиктивного relation F1.", 9.5, SOFT)
     footer(slide, 7)
