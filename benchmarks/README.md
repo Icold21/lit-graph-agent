@@ -45,37 +45,46 @@ python benchmarks/scierc_benchmark.py \
   --data-dir ./raw_data \
   --limit 20 \
   --seed 42 \
-  --model qwen2.5:3b \
+  --model qwen3.5:4b \
   --base-url http://localhost:11434/v1 \
-  --output benchmarks/results/scierc.json
+  --output benchmarks/results/scierc_qwen3.5-4b.json
 ```
 
 Extraction is checkpointed to a JSONL file next to the output, so an interrupted
 run resumes without repeating model calls. Failed abstracts are recorded in the
 result's `failures` field instead of aborting the whole benchmark; the default
-per-request timeout is 600 s because local reasoning models can be slow. The committed result was produced
-with `seed=42`, `limit=20`, and the local `qwen2.5:3b` model through Ollama.
+per-request timeout is 600 s because local reasoning models can be slow. Both
+committed results were produced with `seed=42`, `limit=20`, and local Ollama
+models.
 
 ## Results
 
-Committed run: `qwen2.5:3b` via Ollama, 20 abstracts, `seed=42`, no failed
-abstracts.
+Two committed runs, each on 20 abstracts with `seed=42` and no failed abstracts.
 
-| Signal | Precision | Recall | F1 |
-| --- | ---: | ---: | ---: |
-| Concept nodes — exact | 0.538 | 0.254 | 0.345 |
-| Concept nodes — relaxed | 0.723 | 0.341 | 0.464 |
-| Paper → concept edges — relaxed | 0.723 | 0.341 | 0.464 |
-| Content entities only — exact | 0.521 | 0.297 | 0.378 |
-| Content entities only — relaxed | 0.706 | 0.402 | **0.512** |
+| Model | Signal | Precision | Recall | F1 |
+| --- | --- | ---: | ---: | ---: |
+| `qwen2.5:3b` | Concept nodes — exact | 0.538 | 0.254 | 0.345 |
+| `qwen2.5:3b` | Concept nodes — relaxed | 0.723 | 0.341 | 0.464 |
+| `qwen2.5:3b` | Paper → concept edges — relaxed | 0.723 | 0.341 | 0.464 |
+| `qwen2.5:3b` | Content entities only — exact | 0.521 | 0.297 | 0.378 |
+| `qwen2.5:3b` | Content entities only — relaxed | 0.706 | 0.402 | 0.512 |
+| `qwen3.5:4b` | Concept nodes — exact | 0.556 | 0.254 | 0.349 |
+| `qwen3.5:4b` | Concept nodes — relaxed | 0.800 | 0.365 | 0.501 |
+| `qwen3.5:4b` | Paper → concept edges — relaxed | 0.800 | 0.365 | 0.501 |
+| `qwen3.5:4b` | Content entities only — exact | 0.539 | 0.297 | 0.383 |
+| `qwen3.5:4b` | Content entities only — relaxed | 0.774 | 0.426 | **0.549** |
 
-The extractor produced 5.95 concepts per abstract against 12.6 unique gold
-mentions. The gap is driven by the pipeline's per-paper concept budget and by
-normalisation: LitGraphAgent returns canonical concepts rather than copying
-annotated spans, so exact match is a lower bound. The paper→concept edge row is
-the bipartite projection of the same matches.
+The extractors produced 5.95 (`qwen2.5:3b`) and 5.75 (`qwen3.5:4b`) concepts per
+abstract against 12.6 unique gold mentions. The gap is driven by the pipeline's
+per-paper concept budget and by normalisation: LitGraphAgent returns canonical
+concepts rather than copying annotated spans, so exact match is a lower bound.
+The paper→concept edge row is the bipartite projection of the same matches.
 
-Raw result: [`results/scierc_qwen2.5-3b.json`](results/scierc_qwen2.5-3b.json).
+The `qwen3.5:4b` run took 1836.9 s in total (about 92 s per abstract);
+`qwen2.5:3b` took 252.7 s in total.
+
+Raw results: [`results/scierc_qwen2.5-3b.json`](results/scierc_qwen2.5-3b.json),
+[`results/scierc_qwen3.5-4b.json`](results/scierc_qwen3.5-4b.json).
 
 ## Interpreting the numbers
 
