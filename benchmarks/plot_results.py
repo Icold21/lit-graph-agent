@@ -61,18 +61,18 @@ def render(results: Dict, output: Path) -> Path:
                 textcoords="offset points",
                 ha="center",
                 va="bottom",
-                fontsize=7.5,
+                fontsize=10,
                 color="#0f172a",
             )
 
     ax.set_xticks(list(x))
-    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_xticklabels(labels, fontsize=11)
     ax.set_ylim(0, 1.0)
-    ax.set_ylabel("Score", fontsize=10)
+    ax.set_ylabel("Score", fontsize=12)
     ax.set_title(
         f"SciERC concept extraction — {results.get('model', 'unknown model')}"
         f" ({results.get('papers', '?')} abstracts)",
-        fontsize=11,
+        fontsize=15,
         fontweight="bold",
         color="#0f172a",
     )
@@ -80,7 +80,7 @@ def render(results: Dict, output: Path) -> Path:
     ax.set_axisbelow(True)
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
-    ax.legend(frameon=False, ncols=3, loc="upper right", fontsize=8.5)
+    ax.legend(frameon=False, ncols=3, loc="upper right", fontsize=10.5)
     ax.text(
         0.99,
         -0.18,
@@ -89,7 +89,7 @@ def render(results: Dict, output: Path) -> Path:
         transform=ax.transAxes,
         ha="right",
         va="top",
-        fontsize=7,
+        fontsize=9,
         color="#475569",
     )
     fig.tight_layout()
