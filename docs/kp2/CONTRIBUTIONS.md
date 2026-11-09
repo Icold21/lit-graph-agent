@@ -94,10 +94,10 @@
 
 | Участник | Коммит | Артефакты |
 | --- | --- | --- |
-| Вадим Лялькин | [`d53f184`](https://github.com/Icold21/LitGraphAgent/commit/d53f184) | `docs/GRAPH_MODEL.md` |
-| Нодар Чигладзе | [`ab784c2`](https://github.com/Icold21/LitGraphAgent/commit/ab784c2) | `docs/RETRIEVAL.md`, `docs/kp2/DEMO.md` |
-| Давид Чигладзе | [`6839548`](https://github.com/Icold21/LitGraphAgent/commit/6839548) | SciERC `qwen3.5:4b`, `plot_results.py`, `benchmarks/README.md` |
-| Илья Синко | [`31cd17d`](https://github.com/Icold21/LitGraphAgent/commit/31cd17d) | `docs/LLM_LAYER.md` |
+| Вадим Лялькин | [`87d881c`](https://github.com/Icold21/LitGraphAgent/commit/87d881c) | `docs/GRAPH_MODEL.md` |
+| Нодар Чигладзе | [`423e880`](https://github.com/Icold21/LitGraphAgent/commit/423e880) | `docs/RETRIEVAL.md`, `docs/kp2/DEMO.md` |
+| Давид Чигладзе | [`2b7536e`](https://github.com/Icold21/LitGraphAgent/commit/2b7536e) | SciERC `qwen3.5:4b`, `plot_results.py`, `benchmarks/README.md` |
+| Илья Синко | [`752232a`](https://github.com/Icold21/LitGraphAgent/commit/752232a) | `docs/LLM_LAYER.md` |
 
 Это документальные коммиты по зонам ответственности. Они подтверждают
 владение темой, но не заменяют коммиты в код: до КП3 каждый участник должен

@@ -46,7 +46,7 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/graph_agent.py`, `agent/concepts.py`, `storage/obsidian_vault.py`, `storage/base_manager.py`, `models.py`.
 
-**Documentation commit:** [`d53f184`](https://github.com/Icold21/LitGraphAgent/commit/d53f184) — [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
+**Documentation commit:** [`87d881c`](https://github.com/Icold21/LitGraphAgent/commit/87d881c) — [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
 
 ### Нодар Чигладзе (@NodarNeo) — Data / IR Engineer
 
@@ -65,7 +65,7 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/retrieval_agent.py`, `search/`, `utils/http.py`, `utils/cache.py`.
 
-**Documentation commit:** [`ab784c2`](https://github.com/Icold21/LitGraphAgent/commit/ab784c2) — [docs/RETRIEVAL.md](docs/RETRIEVAL.md) and [docs/kp2/DEMO.md](docs/kp2/DEMO.md).
+**Documentation commit:** [`423e880`](https://github.com/Icold21/LitGraphAgent/commit/423e880) — [docs/RETRIEVAL.md](docs/RETRIEVAL.md) and [docs/kp2/DEMO.md](docs/kp2/DEMO.md).
 
 ### Давид Чигладзе (@David52228) — QA / Evaluation Engineer
 
@@ -80,7 +80,7 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/evaluation_agent.py`, `qa/`, `tests/`, `.github/workflows/ci.yml`, `benchmarks/`.
 
-**Commit evidence:** [`6839548`](https://github.com/Icold21/LitGraphAgent/commit/6839548) — `qwen3.5:4b` SciERC result, plotting script and benchmark protocol.
+**Commit evidence:** [`2b7536e`](https://github.com/Icold21/LitGraphAgent/commit/2b7536e) — `qwen3.5:4b` SciERC result, plotting script and benchmark protocol.
 
 ### Илья Синко (@mang1ch5) — LLM Engineer
 
@@ -97,7 +97,7 @@ orchestrates every other agent through a LangGraph `StateGraph`
 
 **Key files:** `agent/prompt_agent.py`, `agent/validator.py`, `agent/synthesizer.py`, `llm/`.
 
-**Documentation commit:** [`31cd17d`](https://github.com/Icold21/LitGraphAgent/commit/31cd17d) — [docs/LLM_LAYER.md](docs/LLM_LAYER.md).
+**Documentation commit:** [`752232a`](https://github.com/Icold21/LitGraphAgent/commit/752232a) — [docs/LLM_LAYER.md](docs/LLM_LAYER.md).
 
 ## Interaction map
 
