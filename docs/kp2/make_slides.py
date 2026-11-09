@@ -267,7 +267,7 @@ def build() -> Path:
     # 5. Metrics
     slide = prs.slides.add_slide(blank)
     header(slide, "Качество: первые метрики", "SciERC · 20 абстрактов · qwen3.5:4b · seed=42 · 0 падений")
-    add_image(slide, ASSETS / "metrics_qwen3.5-4b.png", 0.55, 1.55, width=7.35)
+    add_image(slide, ASSETS / "metrics_qwen3.5-4b-prompt8.png", 0.55, 1.55, width=7.35)
     add_table(
         slide,
         8.05,
@@ -276,9 +276,9 @@ def build() -> Path:
         2.05,
         [
             ["Сигнал", "F1"],
-            ["Концепты, exact", "0.349"],
-            ["Концепты, relaxed", "0.501"],
-            ["Content, relaxed", "0.549"],
+            ["Концепты, exact", "0.422"],
+            ["Концепты, relaxed", "0.583"],
+            ["Content, relaxed", "0.629"],
         ],
         col_widths=[3.15, 1.4],
         font_size=11,
@@ -294,7 +294,7 @@ def build() -> Path:
             "55 тестов, ruff без ошибок",
             "CI: Python 3.10–3.13",
             "0 падений из 20 абстрактов",
-            "3b и 4b: 0.345 / 0.349 exact",
+            "3b и 4b: 0.345 / 0.422 exact",
         ],
         size=11.5,
     )
@@ -305,15 +305,15 @@ def build() -> Path:
         7.2,
         0.55,
         "Exact — нормализованное равенство; relaxed — token Jaccard ≥ 0.5.\n"
-        "Типизированные отношения SciERC не оцениваются: пайплайн их не предсказывает.",
+        "Опорные: пустое — 0; qwen2.5:3b — 0.345/0.464; oracle — 1.0; SciERC SOTA — 73.4 (др. задача).",
         9,
         MUTED,
     )
     footer(slide, 5)
     notes(
         slide,
-        "1:15–1:40. SciERC: 20 абстрактов, две локальные модели, ноль падений. На 4B F1 концептов 0.349 exact "
-        "и 0.501 relaxed; без Generic-сущностей relaxed F1 0.549. Плюс 55 тестов и CI на четырёх версиях Python.",
+        "1:15–1:40. SciERC: 20 абстрактов, две локальные модели, ноль падений. На 4B с промптом v2 F1 концептов 0.422 exact "
+        "и 0.583 relaxed; без Generic-сущностей relaxed F1 0.629. Плюс 55 тестов и CI на четырёх версиях Python.",
     )
 
     # 6. Changes and risks

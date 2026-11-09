@@ -533,14 +533,14 @@ def slide_metrics(prs, blank):
     heading(slide, "SciERC: качество извлечения концептов", 34)
 
     stats = [
-        ("0.349", "exact F1", TEAL, PALE_TEAL),
-        ("0.501", "relaxed F1", BLUE, PALE_BLUE),
-        ("0.549", "content F1", PURPLE, PALE_PURPLE),
+        ("0.422", "exact F1", TEAL, PALE_TEAL),
+        ("0.583", "relaxed F1", BLUE, PALE_BLUE),
+        ("0.629", "content F1", PURPLE, PALE_PURPLE),
     ]
     for index, (value, label, accent, pale) in enumerate(stats):
         stat_card(slide, 0.75 + index * 2.15, 1.78, 1.95, 1.10, value, label, accent, pale)
 
-    chart = ASSETS / "metrics_qwen3.5-4b.png"
+    chart = ASSETS / "metrics_qwen3.5-4b-prompt8.png"
     if chart.exists():
         slide.shapes.add_picture(str(chart), Inches(0.62), Inches(2.98), width=Inches(6.70))
 
@@ -565,9 +565,66 @@ def slide_metrics(prs, blank):
     footer(slide, 6)
     notes(
         slide,
-        "1:20–1:40. SciERC, 20 абстрактов, две модели, ноль падений. На 4B F1 0.349 exact, "
-        "0.501 relaxed и 0.549 без Generic-сущностей.",
+        "1:20–1:40. SciERC, 20 абстрактов, две модели, ноль падений. На 4B с промптом v2 F1 0.422 exact, "
+        "0.583 relaxed и 0.629 без Generic-сущностей.",
     )
+    return slide
+
+
+def slide_reference(prs, blank):
+    slide = prs.slides.add_slide(blank)
+    add_background(slide)
+    section(slide, "Опорные точки")
+    heading(slide, "С чем сравниваем метрики", 36)
+
+    rows = [
+        ("Точка сравнения", "Что это", "F1"),
+        ("Пустое предсказание", "нижняя граница: концепты не извлекаются", "0.000"),
+        ("qwen2.5:3b", "меньшая модель, те же 20 абстрактов и seed", "0.345 / 0.464 / 0.512"),
+        ("qwen3.5:4b, prompt v2", "текущая формулировка 6–8 концептов", "0.422 / 0.583 / 0.629"),
+        ("SciERC SOTA", "span-level NER/RE, другая постановка", "73.4 / 56.9 / 44.3"),
+        ("Gold oracle", "верхняя граница: все gold-упоминания", "1.000"),
+    ]
+    shape = slide.shapes.add_table(len(rows), 3, Inches(0.75), Inches(1.70), Inches(11.83), Inches(3.55))
+    table = shape.table
+    widths = [2.55, 6.15, 3.13]
+    for index, width in enumerate(widths):
+        table.columns[index].width = Inches(width)
+    for row_index, row in enumerate(rows):
+        for col_index, value in enumerate(row):
+            cell = table.cell(row_index, col_index)
+            cell.text = value
+            cell.margin_left = Inches(0.12)
+            cell.margin_right = Inches(0.12)
+            cell.margin_top = Inches(0.05)
+            cell.margin_bottom = Inches(0.05)
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.alignment = PP_ALIGN.LEFT if col_index < 2 else PP_ALIGN.CENTER
+            for run in paragraph.runs:
+                run.font.name = FONT
+                run.font.size = Pt(18)
+                run.font.bold = row_index == 0 or col_index == 0
+                run.font.color.rgb = WHITE if row_index == 0 else INK
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = TEAL if row_index == 0 else (CARD if row_index % 2 else CARD_ALT)
+    no_shadow(shape)
+
+    textbox(
+        slide,
+        0.78,
+        5.45,
+        11.7,
+        0.9,
+        "F1: exact / relaxed / content relaxed. Prompt v1: 0.349 / 0.501 / 0.549.\n"
+        "SOTA — entity / relation / strict relation F1, проценты. С SOTA напрямую не сравниваем:\n"
+        "там другая постановка — span-level NER/RE, а не канонические концепты.",
+        14,
+        SOFT,
+        line_spacing=1.1,
+    )
+    footer(slide, 7)
+    notes(slide, "Опорные точки: пустое предсказание, 3B-baseline, текущая 4B-модель, oracle и внешний SciERC SOTA.")
     return slide
 
 
@@ -623,7 +680,7 @@ def slide_risks(prs, blank):
     )
 
     textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков, честный бенчмарк.", 14, SOFT)
-    footer(slide, 7)
+    footer(slide, 8)
     notes(slide, "1:40–1:55. Главный риск — узкая оценка, а не архитектура. До финала расширяем выборку и добавляем E2E-метрики.")
     return slide
 
@@ -668,7 +725,7 @@ def slide_team(prs, blank):
 
     shadow_card(slide, 0.75, 6.05, 11.85, 0.55, fill=CARD, line=BORDER, radius=0.14)
     textbox(slide, 1.0, 6.16, 11.3, 0.3, "github.com/Icold21/lit-graph-agent · MIT License · команда AI-RIldium", 10.5, INK, True, align=PP_ALIGN.CENTER)
-    footer(slide, 8)
+    footer(slide, 9)
     notes(slide, "1:55–2:00. Готовность к КП2 — 8 из 10. До декабря — глубина оценки и коммиты каждого участника.")
     return slide
 
@@ -685,6 +742,7 @@ def build() -> Path:
     slide_architecture(prs, blank)
     slide_works(prs, blank)
     slide_metrics(prs, blank)
+    slide_reference(prs, blank)
     slide_risks(prs, blank)
     slide_team(prs, blank)
 
