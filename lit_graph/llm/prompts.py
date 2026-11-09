@@ -91,13 +91,20 @@ Year: {year}
 Venue: {venue}
 Abstract: {abstract[:6000]}
 
-Return strict JSON:
+Concept extraction rules:
+- Return 6-8 key scientific concepts that are explicitly mentioned in the abstract.
+- Prefer specific methods, tasks, metrics, materials, datasets and technical terms.
+- Prefer canonical multi-word names over bare acronyms.
+- Avoid generic words such as system, approach, method, algorithm or result.
+- Return each concept once.
+
+Return strict JSON with concepts first:
 {{
+  "extracted_concepts": ["Specific concept 1", "Specific concept 2", "Specific concept 3"],
   "summary_en": "Deep single-paragraph executive summary in English",
   "key_findings_en": ["Key finding 1", "Key finding 2", "Key finding 3"],
   "methodology_en": "Methodology summary in English",
-  "limitations_en": "Limitations identified in English",
-  "extracted_concepts": ["Concept 1", "Concept 2", "Concept 3"]
+  "limitations_en": "Limitations identified in English"
 }}
 """
 

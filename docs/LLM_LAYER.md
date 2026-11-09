@@ -76,6 +76,11 @@ LLM_MODEL=deepseek-chat
 - отдельно хранить `extracted_concepts` и `extracted_concepts_all`, чтобы
   повторная каноникализация при `--update` не теряла отфильтрованные идеи.
 
+Промпт просит 6–8 конкретных концептов, явно упомянутых в абстракте. Это
+подняло recall и F1 на SciERC: content relaxed F1 вырос с 0.549 до 0.629.
+`LiteratureSynthesizer` использует именно `paper_synthesis_prompt`, поэтому
+формулировка живёт в одном месте и не дублируется в агенте.
+
 ## 7. Проверка
 
 ```bash

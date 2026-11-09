@@ -83,13 +83,15 @@
 - Добавил deterministic fallbacks и устойчивый JSON-парсинг для reasoning
   моделей.
 - Реализовал привязку концептов к страницам PDF.
+- Перевёл синтез на единый `paper_synthesis_prompt` и подобрал формулировку
+  6–8 концептов: content relaxed F1 вырос с 0.549 до 0.629.
 
 **Проверка:** `git log -- lit_graph/llm/ lit_graph/agent/prompt_agent.py lit_graph/agent/synthesizer.py`,
 `pytest tests/test_synthesizer.py tests/test_validator.py tests/test_providers.py -q`.
 
 ## Статус доказательств в git
 
-На 8 ноября 2026 г. история `main` содержит коммиты с авторством четырёх
+На 10 ноября 2026 г. история `main` содержит коммиты с авторством четырёх
 участников команды; коммит Lead-зоны остаётся за `@Icold21`.
 
 | Участник | Коммит | Артефакты |

@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterable, List
 
 from ..config import settings
 from ..llm.base import BaseLLMProvider
+from ..llm.prompts import paper_synthesis_prompt
 from ..models import ConceptMention, GraphEdge, LiteratureBaseState, Paper
 from ..utils.logging_setup import get_logger
 
@@ -31,23 +32,13 @@ class LiteratureSynthesizer:
     # ------------------------------------------------------------------ papers
     def synthesize_paper_content(self, paper: Paper) -> None:
         """Extracts executive summary, methodology, and key concepts in 1 fast LLM call."""
-        prompt = f"""
-Synthesize the following paper strictly in English:
-Title: {paper.title}
-Authors: {', '.join(paper.authors)}
-Year: {paper.year}
-Venue: {paper.venue}
-Abstract: {paper.abstract[:6000]}
-
-Return strict JSON:
-{{
-  "summary_en": "Deep single-paragraph executive summary in English",
-  "key_findings_en": ["Key finding 1", "Key finding 2", "Key finding 3"],
-  "methodology_en": "Methodology summary in English",
-  "limitations_en": "Limitations identified in English",
-  "extracted_concepts": ["Concept 1", "Concept 2", "Concept 3"]
-}}
-"""
+        prompt = paper_synthesis_prompt(
+            paper.title,
+            paper.authors,
+            paper.year,
+            paper.venue,
+            paper.abstract,
+        )
         res = self.llm.generate_json(prompt, "Academic literature synthesizer. Output only valid JSON.")
         if not isinstance(res, dict):
             logger.warning("Paper synthesis returned %s for %r; keeping metadata only", type(res).__name__, paper.title)
