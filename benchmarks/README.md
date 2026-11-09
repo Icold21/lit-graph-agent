@@ -68,23 +68,43 @@ Two committed runs, each on 20 abstracts with `seed=42` and no failed abstracts.
 | `qwen2.5:3b` | Paper → concept edges — relaxed | 0.723 | 0.341 | 0.464 |
 | `qwen2.5:3b` | Content entities only — exact | 0.521 | 0.297 | 0.378 |
 | `qwen2.5:3b` | Content entities only — relaxed | 0.706 | 0.402 | 0.512 |
-| `qwen3.5:4b` | Concept nodes — exact | 0.556 | 0.254 | 0.349 |
-| `qwen3.5:4b` | Concept nodes — relaxed | 0.800 | 0.365 | 0.501 |
-| `qwen3.5:4b` | Paper → concept edges — relaxed | 0.800 | 0.365 | 0.501 |
-| `qwen3.5:4b` | Content entities only — exact | 0.539 | 0.297 | 0.383 |
-| `qwen3.5:4b` | Content entities only — relaxed | 0.774 | 0.426 | **0.549** |
+| `qwen3.5:4b` | Concept nodes — exact | 0.544 | 0.345 | 0.422 |
+| `qwen3.5:4b` | Concept nodes — relaxed | 0.750 | 0.476 | 0.583 |
+| `qwen3.5:4b` | Paper → concept edges — relaxed | 0.750 | 0.476 | 0.583 |
+| `qwen3.5:4b` | Content entities only — exact | 0.525 | 0.402 | 0.455 |
+| `qwen3.5:4b` | Content entities only — relaxed | 0.725 | 0.555 | **0.629** |
 
-The extractors produced 5.95 (`qwen2.5:3b`) and 5.75 (`qwen3.5:4b`) concepts per
+The extractors produced 5.95 (`qwen2.5:3b`) and 8.0 (`qwen3.5:4b`) concepts per
 abstract against 12.6 unique gold mentions. The gap is driven by the pipeline's
 per-paper concept budget and by normalisation: LitGraphAgent returns canonical
 concepts rather than copying annotated spans, so exact match is a lower bound.
 The paper→concept edge row is the bipartite projection of the same matches.
 
-The `qwen3.5:4b` run took 1836.9 s in total (about 92 s per abstract);
-`qwen2.5:3b` took 252.7 s in total.
+The `qwen3.5:4b` row uses the 6–8 concept synthesis prompt. The earlier prompt
+scored 0.349 exact / 0.501 relaxed / 0.549 content relaxed F1; the new prompt
+adds +0.073 / +0.082 / +0.080 F1 respectively.
+
+## Reference points
+
+| Reference point | Exact F1 | Relaxed F1 | Content relaxed F1 | What it means |
+| --- | ---: | ---: | ---: | --- |
+| Empty prediction | 0.000 | 0.000 | 0.000 | lower bound: no concepts extracted |
+| `qwen2.5:3b` | 0.345 | 0.464 | 0.512 | smaller model, same 20 abstracts and seed |
+| `qwen3.5:4b` (prompt v1) | 0.349 | 0.501 | 0.549 | earlier prompt, kept for comparison |
+| `qwen3.5:4b` (prompt v2) | 0.422 | 0.583 | 0.629 | current 6–8 concept prompt |
+| Gold oracle | 1.000 | 1.000 | 1.000 | upper bound: every gold mention is returned |
+| SciERC SOTA | 73.4 entity F1 | 56.9 relation F1 | 44.3 strict relation F1 | SURE, COLING 2025; span NER/RE, a different task |
+
+The SOTA row is intentionally separate: it scores entity and relation spans with
+the official SciERC protocol, while this harness scores canonical concept nodes
+and paper→concept edges. Do not read it as a direct leaderboard comparison.
+
+The `qwen3.5:4b` prompt-v2 run took 3571.0 s in total (about 179 s per abstract);
+the earlier prompt took 1836.9 s; `qwen2.5:3b` took 252.7 s.
 
 Raw results: [`results/scierc_qwen2.5-3b.json`](results/scierc_qwen2.5-3b.json),
-[`results/scierc_qwen3.5-4b.json`](results/scierc_qwen3.5-4b.json).
+[`results/scierc_qwen3.5-4b.json`](results/scierc_qwen3.5-4b.json),
+[`results/scierc_qwen3.5-4b-prompt8.json`](results/scierc_qwen3.5-4b-prompt8.json).
 
 ## Interpreting the numbers
 

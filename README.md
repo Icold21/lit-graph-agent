@@ -24,22 +24,35 @@ they are compared with gold SciERC entity mentions.
 | `qwen2.5:3b` | Concept nodes, exact | 0.538 | 0.254 | 0.345 |
 | `qwen2.5:3b` | Concept nodes, relaxed | 0.723 | 0.341 | 0.464 |
 | `qwen2.5:3b` | Content entities only, relaxed | 0.706 | 0.402 | 0.512 |
-| `qwen3.5:4b` | Concept nodes, exact | 0.556 | 0.254 | 0.349 |
-| `qwen3.5:4b` | Concept nodes, relaxed | 0.800 | 0.365 | 0.501 |
-| `qwen3.5:4b` | Content entities only, relaxed | 0.774 | 0.426 | **0.549** |
+| `qwen3.5:4b` | Concept nodes, exact | 0.544 | 0.345 | 0.422 |
+| `qwen3.5:4b` | Concept nodes, relaxed | 0.750 | 0.476 | 0.583 |
+| `qwen3.5:4b` | Content entities only, relaxed | 0.725 | 0.555 | **0.629** |
 
 **Setup:** both models via Ollama, 20 abstracts (`seed=42`), zero failures.
-The models produced 5.95 and 5.75 concepts per abstract against 12.6 gold
+The models produced 5.95 and 8.0 concepts per abstract against 12.6 gold
 mentions. Exact means normalised string equality; relaxed means token Jaccard
 overlap of at least 0.5. Paper to concept edges are the bipartite projection of
 the same node matches, so edge scores equal relaxed concept scores. Typed
 relations are not scored because the pipeline does not predict SciERC relation
 types. This is a regression sample, not a state-of-the-art claim.
 
+The `qwen3.5:4b` run uses the 6–8 concept synthesis prompt. The previous prompt
+scored 0.349 exact / 0.501 relaxed / 0.549 content relaxed F1; the new one adds
++0.073 / +0.082 / +0.080 F1 respectively, at the cost of longer runs (~59 min
+instead of ~31 min for 20 abstracts).
+
+**Reference points.** We compare against the smaller `qwen2.5:3b` on the same
+20 abstracts (exact F1 0.345, relaxed 0.464, content relaxed 0.512), an empty
+prediction (F1 = 0) and the gold oracle (F1 = 1.0). SciERC literature SOTA
+(entity F1 73.4, relation F1 56.9, strict relation F1 44.3) is shown only as an
+external context: it scores span-level NER/RE, not canonical concept extraction,
+so the numbers are not directly comparable.
+
 Protocol and reproduction: [benchmarks/README.md](benchmarks/README.md).
 Harness: [benchmarks/scierc_benchmark.py](benchmarks/scierc_benchmark.py).
 Raw results: [qwen2.5:3b](benchmarks/results/scierc_qwen2.5-3b.json),
-[qwen3.5:4b](benchmarks/results/scierc_qwen3.5-4b.json).
+[qwen3.5:4b baseline](benchmarks/results/scierc_qwen3.5-4b.json),
+[qwen3.5:4b prompt v2](benchmarks/results/scierc_qwen3.5-4b-prompt8.json).
 
 ## Key capabilities
 

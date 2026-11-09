@@ -1,0 +1,1928 @@
+{
+  "concepts_all_exact": {
+    "precision": 0.5437,
+    "recall": 0.3452,
+    "f1": 0.4223,
+    "tp": 87,
+    "predicted": 160,
+    "gold": 252
+  },
+  "concepts_all_relaxed": {
+    "precision": 0.75,
+    "recall": 0.4762,
+    "f1": 0.5825,
+    "tp": 120,
+    "predicted": 160,
+    "gold": 252
+  },
+  "concepts_content_exact": {
+    "precision": 0.525,
+    "recall": 0.4019,
+    "f1": 0.4553,
+    "tp": 84,
+    "predicted": 160,
+    "gold": 209
+  },
+  "concepts_content_relaxed": {
+    "precision": 0.725,
+    "recall": 0.555,
+    "f1": 0.6287,
+    "tp": 116,
+    "predicted": 160,
+    "gold": 209
+  },
+  "edges_all_exact": {
+    "precision": 0.5437,
+    "recall": 0.3452,
+    "f1": 0.4223,
+    "tp": 87,
+    "predicted": 160,
+    "gold": 252
+  },
+  "edges_all_relaxed": {
+    "precision": 0.75,
+    "recall": 0.4762,
+    "f1": 0.5825,
+    "tp": 120,
+    "predicted": 160,
+    "gold": 252
+  },
+  "papers": 20,
+  "avg_gold_entities": 12.6,
+  "avg_predicted_concepts": 8.0,
+  "entity_type_distribution": {
+    "Method": 78,
+    "OtherScientificTerm": 76,
+    "Generic": 66,
+    "Task": 52,
+    "Material": 22,
+    "Metric": 9
+  },
+  "per_paper": [
+    {
+      "paper_id": "A97-1028",
+      "gold_entities": 8,
+      "gold_content_entities": 5,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Named Entity task",
+        "information extraction",
+        "corpora",
+        "several languages",
+        "statistical profile",
+        "lower bound estimation",
+        "cross-lingual comparisons",
+        "statistical analysis"
+      ],
+      "gold": [
+        "statistical profile",
+        "Named Entity task",
+        "information extraction task",
+        "statistical analysis",
+        "algorithm",
+        "lower bound estimation",
+        "Named Entity corpora",
+        "analysis"
+      ],
+      "concepts_all_exact": {
+        "tp": 4,
+        "missing": [
+          "algorithm",
+          "analysi",
+          "information extraction task",
+          "named entity corpora"
+        ],
+        "extra": [
+          "corpora",
+          "cross lingual comparison",
+          "information extraction",
+          "several language"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 5,
+        "missing": [
+          "algorithm",
+          "Named Entity corpora",
+          "analysis"
+        ],
+        "extra": [
+          "corpora",
+          "several languages",
+          "cross-lingual comparisons"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "information extraction task",
+          "named entity corpora"
+        ],
+        "extra": [
+          "corpora",
+          "cross lingual comparison",
+          "information extraction",
+          "several language",
+          "statistical profile"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 4,
+        "missing": [
+          "Named Entity corpora"
+        ],
+        "extra": [
+          "corpora",
+          "several languages",
+          "statistical profile",
+          "cross-lingual comparisons"
+        ]
+      }
+    },
+    {
+      "paper_id": "A97-1052",
+      "gold_entities": 6,
+      "gold_content_entities": 5,
+      "predicted_concepts": 8,
+      "predicted": [
+        "subcategorization dictionary",
+        "textual corpora",
+        "relative frequency of occurrence",
+        "subcategorization classes",
+        "complementation patterns",
+        "English",
+        "parser",
+        "accuracy"
+      ],
+      "gold": [
+        "system",
+        "subcategorization dictionary",
+        "textual corpora",
+        "relative frequency of occurrence",
+        "accuracy",
+        "parser"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "system"
+        ],
+        "extra": [
+          "complementation pattern",
+          "english",
+          "subcategorization class"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 5,
+        "missing": [
+          "system"
+        ],
+        "extra": [
+          "subcategorization classes",
+          "complementation patterns",
+          "English"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [],
+        "extra": [
+          "complementation pattern",
+          "english",
+          "subcategorization class"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 5,
+        "missing": [],
+        "extra": [
+          "subcategorization classes",
+          "complementation patterns",
+          "English"
+        ]
+      }
+    },
+    {
+      "paper_id": "AAAI_1993_70_abs",
+      "gold_entities": 13,
+      "gold_content_entities": 11,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Rete and Treat",
+        "Forward Chaining",
+        "Full unification",
+        "Assertions",
+        "Universal quantification",
+        "Compile time checks",
+        "Run time checks",
+        "Expressive power"
+      ],
+      "gold": [
+        "Rete and Treat algorithms",
+        "implementation techniques",
+        "Forward Chaining rule systems",
+        "algorithms",
+        "language of limited expressive power",
+        "Assertions",
+        "variables",
+        "universal quantification",
+        "rule",
+        "full unification",
+        "compile time",
+        "run time",
+        "it"
+      ],
+      "concepts_all_exact": {
+        "tp": 3,
+        "missing": [
+          "algorithm",
+          "compile time",
+          "forward chaining rule system",
+          "implementation technique",
+          "it",
+          "language of limited expressive power",
+          "rete and treat algorithm",
+          "rule",
+          "run time",
+          "variable"
+        ],
+        "extra": [
+          "compile time check",
+          "expressive power",
+          "forward chaining",
+          "rete and treat",
+          "run time check"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "implementation techniques",
+          "algorithms",
+          "language of limited expressive power",
+          "variables",
+          "rule",
+          "it"
+        ],
+        "extra": [
+          "Expressive power"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "compile time",
+          "forward chaining rule system",
+          "implementation technique",
+          "language of limited expressive power",
+          "rete and treat algorithm",
+          "rule",
+          "run time",
+          "variable"
+        ],
+        "extra": [
+          "compile time check",
+          "expressive power",
+          "forward chaining",
+          "rete and treat",
+          "run time check"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "implementation techniques",
+          "language of limited expressive power",
+          "variables",
+          "rule"
+        ],
+        "extra": [
+          "Expressive power"
+        ]
+      }
+    },
+    {
+      "paper_id": "C04-1192",
+      "gold_entities": 15,
+      "gold_content_entities": 13,
+      "predicted_concepts": 8,
+      "predicted": [
+        "word sense disambiguation",
+        "parallel corpora",
+        "word alignment",
+        "word clustering",
+        "translation equivalents",
+        "aligned wordnets",
+        "Princeton Wordnet",
+        "EuroWordNet"
+      ],
+      "gold": [
+        "method",
+        "word sense disambiguation",
+        "parallel corpora",
+        "word alignment",
+        "word clustering",
+        "automatic extraction  of  translation equivalents",
+        "aligned  wordnets",
+        "wordnets",
+        "Princeton Wordnet",
+        "EuroWordNet",
+        "WSD system",
+        "system",
+        "alignment errors  in  multilingually aligned wordnets",
+        "multilingually aligned wordnets",
+        "BalkaNet"
+      ],
+      "concepts_all_exact": {
+        "tp": 7,
+        "missing": [
+          "alignment error in multilingually aligned wordnet",
+          "automatic extraction of translation equivalent",
+          "balkanet",
+          "method",
+          "multilingually aligned wordnet",
+          "system",
+          "wordnet",
+          "wsd system"
+        ],
+        "extra": [
+          "translation equivalent"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "method",
+          "automatic extraction  of  translation equivalents",
+          "wordnets",
+          "WSD system",
+          "system",
+          "alignment errors  in  multilingually aligned wordnets",
+          "multilingually aligned wordnets",
+          "BalkaNet"
+        ],
+        "extra": [
+          "translation equivalents"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 7,
+        "missing": [
+          "alignment error in multilingually aligned wordnet",
+          "automatic extraction of translation equivalent",
+          "balkanet",
+          "multilingually aligned wordnet",
+          "wordnet",
+          "wsd system"
+        ],
+        "extra": [
+          "translation equivalent"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "automatic extraction  of  translation equivalents",
+          "wordnets",
+          "WSD system",
+          "alignment errors  in  multilingually aligned wordnets",
+          "multilingually aligned wordnets",
+          "BalkaNet"
+        ],
+        "extra": [
+          "translation equivalents"
+        ]
+      }
+    },
+    {
+      "paper_id": "C08-2010",
+      "gold_entities": 10,
+      "gold_content_entities": 8,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Language resource quality",
+        "Natural Language Processing",
+        "Machine Translation",
+        "Reference translations",
+        "Automatic evaluations",
+        "High-quality data",
+        "Resource validation",
+        "Automatic metrics"
+      ],
+      "gold": [
+        "Language resource quality",
+        "NLP",
+        "MT",
+        "reference translations",
+        "automatic evaluations",
+        "high-quality data",
+        "resources",
+        "different-quality references",
+        "evaluation",
+        "automatic metrics"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "different quality reference",
+          "evaluation",
+          "mt",
+          "nlp",
+          "resource"
+        ],
+        "extra": [
+          "machine translation",
+          "natural language processing",
+          "resource validation"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "NLP",
+          "MT",
+          "different-quality references",
+          "evaluation"
+        ],
+        "extra": [
+          "Natural Language Processing",
+          "Machine Translation"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "different quality reference",
+          "mt",
+          "nlp"
+        ],
+        "extra": [
+          "machine translation",
+          "natural language processing",
+          "resource validation"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 5,
+        "missing": [
+          "NLP",
+          "MT",
+          "different-quality references"
+        ],
+        "extra": [
+          "Natural Language Processing",
+          "Machine Translation",
+          "Resource validation"
+        ]
+      }
+    },
+    {
+      "paper_id": "C86-1021",
+      "gold_entities": 15,
+      "gold_content_entities": 12,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Machine Translation",
+        "Mu-project",
+        "Multiple Layer of Grammars",
+        "Lexicon Driven Processing",
+        "Form-Oriented Dictionary Description",
+        "Japanese to English translation",
+        "Natural language ambiguity",
+        "Transfer framework"
+      ],
+      "gold": [
+        "interlingual approach",
+        "MT",
+        "natural language understanding",
+        "machine translation",
+        "Mu-project",
+        "transfer approach",
+        "transfer phase",
+        "system",
+        "Japanese",
+        "English",
+        "principles",
+        "Multiple Layer of Grammars",
+        "Multiple Layer Presentation",
+        "Lexicon Driven Processing",
+        "Form-Oriented Dictionary Description"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "english",
+          "interlingual approach",
+          "japanese",
+          "mt",
+          "multiple layer presentation",
+          "natural language understanding",
+          "principle",
+          "system",
+          "transfer approach",
+          "transfer phase"
+        ],
+        "extra": [
+          "japanese to english translation",
+          "natural language ambiguity",
+          "transfer framework"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "interlingual approach",
+          "MT",
+          "transfer approach",
+          "transfer phase",
+          "system",
+          "Japanese",
+          "English",
+          "principles",
+          "Multiple Layer Presentation"
+        ],
+        "extra": [
+          "Japanese to English translation",
+          "Transfer framework"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "english",
+          "interlingual approach",
+          "japanese",
+          "mt",
+          "multiple layer presentation",
+          "natural language understanding",
+          "transfer approach"
+        ],
+        "extra": [
+          "japanese to english translation",
+          "natural language ambiguity",
+          "transfer framework"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 6,
+        "missing": [
+          "interlingual approach",
+          "transfer approach",
+          "MT",
+          "Japanese",
+          "English",
+          "Multiple Layer Presentation"
+        ],
+        "extra": [
+          "Japanese to English translation",
+          "Transfer framework"
+        ]
+      }
+    },
+    {
+      "paper_id": "C88-1044",
+      "gold_entities": 7,
+      "gold_content_entities": 6,
+      "predicted_concepts": 8,
+      "predicted": [
+        "demonstrative expressions",
+        "necessary and sufficient conditions",
+        "discourse processing",
+        "demonstrative forms",
+        "demonstrative functions",
+        "genre dependency",
+        "anaphoric expressions",
+        "natural language generation"
+      ],
+      "gold": [
+        "demonstrative expressions",
+        "English",
+        "implications",
+        "discourse processing algorithms",
+        "demonstrative forms and functions",
+        "anaphoric expressions",
+        "natural language generation system"
+      ],
+      "concepts_all_exact": {
+        "tp": 2,
+        "missing": [
+          "demonstrative form and function",
+          "discourse processing algorithm",
+          "english",
+          "implication",
+          "natural language generation system"
+        ],
+        "extra": [
+          "demonstrative form",
+          "demonstrative function",
+          "discourse processing",
+          "genre dependency",
+          "natural language generation",
+          "necessary and sufficient condition"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 5,
+        "missing": [
+          "English",
+          "implications"
+        ],
+        "extra": [
+          "necessary and sufficient conditions",
+          "demonstrative functions",
+          "genre dependency"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 2,
+        "missing": [
+          "demonstrative form and function",
+          "discourse processing algorithm",
+          "english",
+          "natural language generation system"
+        ],
+        "extra": [
+          "demonstrative form",
+          "demonstrative function",
+          "discourse processing",
+          "genre dependency",
+          "natural language generation",
+          "necessary and sufficient condition"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 5,
+        "missing": [
+          "English"
+        ],
+        "extra": [
+          "necessary and sufficient conditions",
+          "demonstrative functions",
+          "genre dependency"
+        ]
+      }
+    },
+    {
+      "paper_id": "C90-3046",
+      "gold_entities": 9,
+      "gold_content_entities": 8,
+      "predicted_concepts": 8,
+      "predicted": [
+        "sentence analysis",
+        "defeasible reasoning",
+        "Japanese sentence analyses",
+        "formalization of defeasible reasoning",
+        "arguments",
+        "defeat rules",
+        "capture defeasibility",
+        "Konolige argumentation system"
+      ],
+      "gold": [
+        "sentence analysis",
+        "defeasible reasoning",
+        "treatment",
+        "Japanese sentence analyses",
+        "argumentation system",
+        "formalization  of  defeasible reasoning",
+        "arguments",
+        "defeat rules",
+        "defeasibility"
+      ],
+      "concepts_all_exact": {
+        "tp": 6,
+        "missing": [
+          "argumentation system",
+          "defeasibility",
+          "treatment"
+        ],
+        "extra": [
+          "capture defeasibility",
+          "konolige argumentation system"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 8,
+        "missing": [
+          "treatment"
+        ],
+        "extra": []
+      },
+      "concepts_content_exact": {
+        "tp": 6,
+        "missing": [
+          "argumentation system",
+          "defeasibility"
+        ],
+        "extra": [
+          "capture defeasibility",
+          "konolige argumentation system"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 8,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "paper_id": "CVPR_2007_10_abs",
+      "gold_entities": 13,
+      "gold_content_entities": 12,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Fukunaga-Koontz Transform",
+        "linear Fukunaga-Koontz Transform",
+        "Kernel Fukunaga-Koontz Transform",
+        "small-sample-size",
+        "multi-class problem",
+        "higher dimensional kernel subspaces",
+        "face recognition applications",
+        "discriminative subspaces"
+      ],
+      "gold": [
+        "linear Fukunaga-Koontz Transform (FKT)",
+        "discriminative subspaces building approach",
+        "FKT",
+        "small-sample-size",
+        "linear FKT",
+        "it",
+        "multi-class problem",
+        "higher dimensional (kernel) subspaces",
+        "discrimination ability",
+        "Kernel Fukunaga-Koontz Transform",
+        "face recognition applications",
+        "non-linear generalization",
+        "domain specific problems"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "discrimination ability",
+          "discriminative subspace building approach",
+          "domain specific problem",
+          "fkt",
+          "it",
+          "linear fkt",
+          "linear fukunaga koontz transform fkt",
+          "non linear generalization"
+        ],
+        "extra": [
+          "discriminative subspace",
+          "fukunaga koontz transform",
+          "linear fukunaga koontz transform"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "FKT",
+          "linear FKT",
+          "it",
+          "discrimination ability",
+          "non-linear generalization",
+          "domain specific problems"
+        ],
+        "extra": [
+          "linear Fukunaga-Koontz Transform"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "discrimination ability",
+          "discriminative subspace building approach",
+          "domain specific problem",
+          "fkt",
+          "linear fkt",
+          "linear fukunaga koontz transform fkt",
+          "non linear generalization"
+        ],
+        "extra": [
+          "discriminative subspace",
+          "fukunaga koontz transform",
+          "linear fukunaga koontz transform"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "FKT",
+          "linear FKT",
+          "discrimination ability",
+          "non-linear generalization",
+          "domain specific problems"
+        ],
+        "extra": [
+          "linear Fukunaga-Koontz Transform"
+        ]
+      }
+    },
+    {
+      "paper_id": "CVPR_2007_21_abs",
+      "gold_entities": 15,
+      "gold_content_entities": 14,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Classification of outdoor scenes",
+        "One-class classification",
+        "Patch-based clustering",
+        "Codebook of region types",
+        "Bag of individual regions",
+        "Bag of region pairs",
+        "Bayesian classifiers",
+        "Region selection strategy"
+      ],
+      "gold": [
+        "classification of outdoor scenes",
+        "one-class classification",
+        "patch-based clustering algorithms",
+        "one-class classifiers",
+        "uniform color and texture properties",
+        "clustering of patches",
+        "codebook of region types",
+        "models",
+        "scene representation",
+        "spatial relationships",
+        "scene classification",
+        "Bayesian classifiers",
+        "region selection algorithm",
+        "LabelMe data set",
+        "baseline global feature-based approach"
+      ],
+      "concepts_all_exact": {
+        "tp": 4,
+        "missing": [
+          "baseline global feature based approach",
+          "clustering of patche",
+          "labelme data set",
+          "model",
+          "one class classifier",
+          "patch based clustering algorithm",
+          "region selection algorithm",
+          "scene classification",
+          "scene representation",
+          "spatial relationship"
+        ],
+        "extra": [
+          "bag of individual region",
+          "bag of region pair",
+          "patch based clustering",
+          "region selection strategy"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "one-class classifiers",
+          "uniform color and texture properties",
+          "clustering of patches",
+          "models",
+          "scene representation",
+          "spatial relationships",
+          "scene classification",
+          "LabelMe data set",
+          "baseline global feature-based approach"
+        ],
+        "extra": [
+          "Bag of individual regions",
+          "Bag of region pairs"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 4,
+        "missing": [
+          "baseline global feature based approach",
+          "clustering of patche",
+          "labelme data set",
+          "one class classifier",
+          "patch based clustering algorithm",
+          "region selection algorithm",
+          "scene classification",
+          "scene representation",
+          "spatial relationship",
+          "uniform color and texture property"
+        ],
+        "extra": [
+          "bag of individual region",
+          "bag of region pair",
+          "patch based clustering",
+          "region selection strategy"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 6,
+        "missing": [
+          "one-class classifiers",
+          "uniform color and texture properties",
+          "clustering of patches",
+          "scene representation",
+          "spatial relationships",
+          "scene classification",
+          "LabelMe data set",
+          "baseline global feature-based approach"
+        ],
+        "extra": [
+          "Bag of individual regions",
+          "Bag of region pairs"
+        ]
+      }
+    },
+    {
+      "paper_id": "CVPR_2010_10_abs",
+      "gold_entities": 24,
+      "gold_content_entities": 19,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Object localization",
+        "Two class problem",
+        "Estimation stage",
+        "Classification stage",
+        "Random Ferns",
+        "Local histograms of oriented gradients",
+        "Supervised learning",
+        "Partial occlusions"
+      ],
+      "gold": [
+        "approach",
+        "classifier",
+        "class problem",
+        "image",
+        "orien-tations",
+        "problem",
+        "estimation stage",
+        "classification stage",
+        "estimator",
+        "object poses",
+        "time complexity",
+        "algorithm",
+        "classification",
+        "boosted combination of Random Ferns",
+        "local histograms of oriented gradients (HOGs)",
+        "pre-processing step",
+        "supervised learning",
+        "gradient space",
+        "database",
+        "motorbikes under planar rotations",
+        "conditions",
+        "cluttered backgrounds",
+        "changing illumination conditions",
+        "partial occlusions"
+      ],
+      "concepts_all_exact": {
+        "tp": 4,
+        "missing": [
+          "algorithm",
+          "approach",
+          "boosted combination of random fern",
+          "changing illumination condition",
+          "class problem",
+          "classification",
+          "classifier",
+          "cluttered background",
+          "condition",
+          "database"
+        ],
+        "extra": [
+          "local histogram of oriented gradient",
+          "object localization",
+          "random fern",
+          "two class problem"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "approach",
+          "classifier",
+          "image",
+          "orien-tations",
+          "problem",
+          "estimator",
+          "object poses",
+          "time complexity",
+          "algorithm",
+          "classification"
+        ],
+        "extra": [
+          "Object localization",
+          "Random Ferns"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 4,
+        "missing": [
+          "boosted combination of random fern",
+          "changing illumination condition",
+          "class problem",
+          "classification",
+          "classifier",
+          "cluttered background",
+          "estimator",
+          "gradient space",
+          "image",
+          "local histogram of oriented gradient hog"
+        ],
+        "extra": [
+          "local histogram of oriented gradient",
+          "object localization",
+          "random fern",
+          "two class problem"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 6,
+        "missing": [
+          "classifier",
+          "image",
+          "orien-tations",
+          "estimator",
+          "object poses",
+          "time complexity",
+          "classification",
+          "boosted combination of Random Ferns",
+          "pre-processing step",
+          "gradient space"
+        ],
+        "extra": [
+          "Object localization",
+          "Random Ferns"
+        ]
+      }
+    },
+    {
+      "paper_id": "CVPR_2013_10_abs",
+      "gold_entities": 19,
+      "gold_content_entities": 15,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Spatio-temporal video segmentation",
+        "Region-classifiers",
+        "Appearance and motion features",
+        "Segmentation hierarchy levels",
+        "Semi-supervised learning framework",
+        "Geometric context of video",
+        "Ground-truth annotated outdoor videos",
+        "96% accuracy across main geometric classes"
+      ],
+      "gold": [
+        "algorithm",
+        "3D geometric structure of outdoor video scenes",
+        "spatio-temporal video segmentation",
+        "dynamic scene",
+        "geometric classes",
+        "region-classifiers",
+        "appearance and motion features",
+        "segmentation hierarchy levels",
+        "granularity a priori",
+        "dataset",
+        "geometric context of video",
+        "method",
+        "annotated outdoor videos",
+        "semi-supervised learning framework",
+        "labeled data",
+        "high confidence predictions",
+        "unlabeled data",
+        "system",
+        "accuracy"
+      ],
+      "concepts_all_exact": {
+        "tp": 6,
+        "missing": [
+          "3d geometric structure of outdoor video scene",
+          "accuracy",
+          "algorithm",
+          "annotated outdoor video",
+          "dataset",
+          "dynamic scene",
+          "geometric class",
+          "granularity a priori",
+          "high confidence prediction",
+          "labeled data"
+        ],
+        "extra": [
+          "96 accuracy across main geometric class",
+          "ground truth annotated outdoor video"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "algorithm",
+          "3D geometric structure of outdoor video scenes",
+          "dynamic scene",
+          "geometric classes",
+          "granularity a priori",
+          "dataset",
+          "method",
+          "labeled data",
+          "high confidence predictions",
+          "unlabeled data"
+        ],
+        "extra": [
+          "96% accuracy across main geometric classes"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 6,
+        "missing": [
+          "3d geometric structure of outdoor video scene",
+          "accuracy",
+          "annotated outdoor video",
+          "dynamic scene",
+          "geometric class",
+          "granularity a priori",
+          "high confidence prediction",
+          "labeled data",
+          "unlabeled data"
+        ],
+        "extra": [
+          "96 accuracy across main geometric class",
+          "ground truth annotated outdoor video"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "3D geometric structure of outdoor video scenes",
+          "dynamic scene",
+          "geometric classes",
+          "granularity a priori",
+          "labeled data",
+          "high confidence predictions",
+          "unlabeled data",
+          "accuracy"
+        ],
+        "extra": [
+          "96% accuracy across main geometric classes"
+        ]
+      }
+    },
+    {
+      "paper_id": "H05-1115",
+      "gold_entities": 11,
+      "gold_content_entities": 8,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Question-focused sentence retrieval",
+        "Complex news articles",
+        "Multi-event stories",
+        "Time-sensitive questions",
+        "Graph-based stochastic comparison",
+        "Relative importance of textual units",
+        "IDF-weighted word overlap similarity",
+        "TRDR score"
+      ],
+      "gold": [
+        "question-focused sentence retrieval",
+        "news articles",
+        "multi-event stories",
+        "sentence retrieval problem",
+        "stochastic, graph-based method",
+        "generic summarization",
+        "method",
+        "it",
+        "baseline",
+        "IDF-weighted word overlap",
+        "TRDR score"
+      ],
+      "concepts_all_exact": {
+        "tp": 3,
+        "missing": [
+          "baseline",
+          "generic summarization",
+          "idf weighted word overlap",
+          "it",
+          "method",
+          "new article",
+          "sentence retrieval problem",
+          "stochastic graph based method"
+        ],
+        "extra": [
+          "complex new article",
+          "graph based stochastic comparison",
+          "idf weighted word overlap similarity",
+          "relative importance of textual unit",
+          "time sensitive question"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "sentence retrieval problem",
+          "generic summarization",
+          "method",
+          "it",
+          "baseline"
+        ],
+        "extra": [
+          "Time-sensitive questions",
+          "Relative importance of textual units"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "generic summarization",
+          "idf weighted word overlap",
+          "new article",
+          "sentence retrieval problem",
+          "stochastic graph based method"
+        ],
+        "extra": [
+          "complex new article",
+          "graph based stochastic comparison",
+          "idf weighted word overlap similarity",
+          "relative importance of textual unit",
+          "time sensitive question"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 6,
+        "missing": [
+          "sentence retrieval problem",
+          "generic summarization"
+        ],
+        "extra": [
+          "Time-sensitive questions",
+          "Relative importance of textual units"
+        ]
+      }
+    },
+    {
+      "paper_id": "ICCV_2013_36_abs",
+      "gold_entities": 11,
+      "gold_content_entities": 8,
+      "predicted_concepts": 8,
+      "predicted": [
+        "photo-realistic facade images",
+        "semantic components",
+        "tiling",
+        "occluded parts inpainting",
+        "genetic algorithm",
+        "facade textures",
+        "building styles",
+        "city models"
+      ],
+      "gold": [
+        "creation of city models",
+        "method",
+        "synthesizing complex, photo-realistic facade images",
+        "semantic components",
+        "tiling",
+        "facade textures",
+        "occluded parts inpainted",
+        "genetic algorithm",
+        "facades",
+        "inpainted parts",
+        "multiple standard datasets"
+      ],
+      "concepts_all_exact": {
+        "tp": 4,
+        "missing": [
+          "creation of city model",
+          "facade",
+          "inpainted part",
+          "method",
+          "multiple standard dataset",
+          "occluded part inpainted",
+          "synthesizing complex photo realistic facade image"
+        ],
+        "extra": [
+          "building style",
+          "city model",
+          "occluded part inpainting",
+          "photo realistic facade image"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "method",
+          "facades",
+          "inpainted parts",
+          "multiple standard datasets"
+        ],
+        "extra": [
+          "building styles"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "creation of city model",
+          "facade",
+          "inpainted part",
+          "occluded part inpainted",
+          "synthesizing complex photo realistic facade image"
+        ],
+        "extra": [
+          "building style",
+          "city model",
+          "genetic algorithm",
+          "occluded part inpainting",
+          "photo realistic facade image"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 6,
+        "missing": [
+          "facades",
+          "inpainted parts"
+        ],
+        "extra": [
+          "genetic algorithm",
+          "building styles"
+        ]
+      }
+    },
+    {
+      "paper_id": "IJCAI_2010_4_abs",
+      "gold_entities": 9,
+      "gold_content_entities": 7,
+      "predicted_concepts": 8,
+      "predicted": [
+        "Bayesian machine learning",
+        "Conjugate priors",
+        "Bregman divergence",
+        "Inherent geometry",
+        "Hyperparameters",
+        "Effective sample points",
+        "Hybrid model",
+        "Semi-supervised learning"
+      ],
+      "gold": [
+        "Bayesian machine learning",
+        "conjugate priors",
+        "Bregman divergence",
+        "geometric understanding of conjugate priors",
+        "hyperparameters",
+        "prior",
+        "generative and discriminative components",
+        "hybrid model",
+        "semi-supervised learning"
+      ],
+      "concepts_all_exact": {
+        "tp": 6,
+        "missing": [
+          "generative and discriminative component",
+          "geometric understanding of conjugate prior",
+          "prior"
+        ],
+        "extra": [
+          "effective sample point",
+          "inherent geometry"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 6,
+        "missing": [
+          "geometric understanding of conjugate priors",
+          "prior",
+          "generative and discriminative components"
+        ],
+        "extra": [
+          "Inherent geometry",
+          "Effective sample points"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "generative and discriminative component",
+          "geometric understanding of conjugate prior"
+        ],
+        "extra": [
+          "effective sample point",
+          "hyperparameter",
+          "inherent geometry"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 5,
+        "missing": [
+          "geometric understanding of conjugate priors",
+          "generative and discriminative components"
+        ],
+        "extra": [
+          "Inherent geometry",
+          "Hyperparameters",
+          "Effective sample points"
+        ]
+      }
+    },
+    {
+      "paper_id": "INTERSPEECH_2008_28_abs",
+      "gold_entities": 22,
+      "gold_content_entities": 22,
+      "predicted_concepts": 8,
+      "predicted": [
+        "discrete nerve-action potentials",
+        "inner hair cell synapse",
+        "dead time period",
+        "offset adaptation model",
+        "phase locking",
+        "auditory nerve fibers",
+        "onset neurons",
+        "multi-layer perceptrons"
+      ],
+      "gold": [
+        "encoding sound",
+        "neuronal processing",
+        "analog pressure wave",
+        "discrete nerve-action potentials",
+        "pool models",
+        "inner hair cell synapse",
+        "visual inspection",
+        "automatic speech recognition (ASR)",
+        "offset adaptation (OA) model",
+        "OA",
+        "phase locking in the auditory nerve (AN)",
+        "ASR accuracy",
+        "features",
+        "AN fibers (ANFs)",
+        "auditory processing",
+        "onset neurons (ONs)",
+        "auditory brainstem",
+        "Multi-layer perceptrons (MLPs)",
+        "Gaussian mixture models (GMMs)",
+        "ANF-based and ON-based auditory features",
+        "MSG (Modulation-filtered Spec-troGram) auditory features",
+        "MLPs"
+      ],
+      "concepts_all_exact": {
+        "tp": 2,
+        "missing": [
+          "analog pressure wave",
+          "anf based and on based auditory feature",
+          "asr accuracy",
+          "auditory brainstem",
+          "auditory processing",
+          "automatic speech recognition asr",
+          "encoding sound",
+          "feature",
+          "fiber anf",
+          "gaussian mixture model gmm"
+        ],
+        "extra": [
+          "auditory nerve fiber",
+          "dead time period",
+          "multi layer perceptron",
+          "offset adaptation model",
+          "onset neuron",
+          "phase locking"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 5,
+        "missing": [
+          "encoding sound",
+          "neuronal processing",
+          "analog pressure wave",
+          "pool models",
+          "visual inspection",
+          "automatic speech recognition (ASR)",
+          "OA",
+          "phase locking in the auditory nerve (AN)",
+          "ASR accuracy",
+          "features"
+        ],
+        "extra": [
+          "dead time period",
+          "phase locking",
+          "auditory nerve fibers"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 2,
+        "missing": [
+          "analog pressure wave",
+          "anf based and on based auditory feature",
+          "asr accuracy",
+          "auditory brainstem",
+          "auditory processing",
+          "automatic speech recognition asr",
+          "encoding sound",
+          "feature",
+          "fiber anf",
+          "gaussian mixture model gmm"
+        ],
+        "extra": [
+          "auditory nerve fiber",
+          "dead time period",
+          "multi layer perceptron",
+          "offset adaptation model",
+          "onset neuron",
+          "phase locking"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 5,
+        "missing": [
+          "encoding sound",
+          "neuronal processing",
+          "analog pressure wave",
+          "pool models",
+          "visual inspection",
+          "automatic speech recognition (ASR)",
+          "OA",
+          "phase locking in the auditory nerve (AN)",
+          "ASR accuracy",
+          "features"
+        ],
+        "extra": [
+          "dead time period",
+          "phase locking",
+          "auditory nerve fibers"
+        ]
+      }
+    },
+    {
+      "paper_id": "J88-3002",
+      "gold_entities": 8,
+      "gold_content_entities": 6,
+      "predicted_concepts": 8,
+      "predicted": [
+        "intelligent interactive systems",
+        "user modeling",
+        "user model",
+        "interaction requirements",
+        "knowledge acquisition",
+        "implementation",
+        "classification dimensions",
+        "research topics"
+      ],
+      "gold": [
+        "intelligent interactive systems",
+        "they",
+        "user modeling",
+        "systems",
+        "user model",
+        "it",
+        "user modeling component",
+        "user modeling systems"
+      ],
+      "concepts_all_exact": {
+        "tp": 3,
+        "missing": [
+          "it",
+          "system",
+          "they",
+          "user modeling component",
+          "user modeling system"
+        ],
+        "extra": [
+          "classification dimension",
+          "implementation",
+          "interaction requirement",
+          "knowledge acquisition",
+          "research topic"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 3,
+        "missing": [
+          "they",
+          "systems",
+          "it",
+          "user modeling component",
+          "user modeling systems"
+        ],
+        "extra": [
+          "interaction requirements",
+          "knowledge acquisition",
+          "implementation",
+          "classification dimensions",
+          "research topics"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "system",
+          "user modeling component",
+          "user modeling system"
+        ],
+        "extra": [
+          "classification dimension",
+          "implementation",
+          "interaction requirement",
+          "knowledge acquisition",
+          "research topic"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 3,
+        "missing": [
+          "systems",
+          "user modeling component",
+          "user modeling systems"
+        ],
+        "extra": [
+          "interaction requirements",
+          "knowledge acquisition",
+          "implementation",
+          "classification dimensions",
+          "research topics"
+        ]
+      }
+    },
+    {
+      "paper_id": "N04-2005",
+      "gold_entities": 12,
+      "gold_content_entities": 9,
+      "predicted_concepts": 8,
+      "predicted": [
+        "English text translation",
+        "American Sign Language animation",
+        "traditional machine translation architectural designs",
+        "new semantic representation",
+        "virtual reality 3D scene modeling software",
+        "spatially complex American Sign Language phenomena",
+        "classifier predicates",
+        "interlingua"
+      ],
+      "gold": [
+        "translation  of  English text  into  American Sign Language (ASL) animation",
+        "MT architectural designs",
+        "semantic representation",
+        "virtual reality 3D scene modeling software",
+        "spatially complex ASL phenomena",
+        "classifier predicates",
+        "model",
+        "interlingua",
+        "multi-pathway MT architecture design",
+        "transfer",
+        "direct approaches",
+        "system"
+      ],
+      "concepts_all_exact": {
+        "tp": 3,
+        "missing": [
+          "direct approache",
+          "model",
+          "mt architectural design",
+          "multi pathway mt architecture design",
+          "semantic representation",
+          "spatially complex asl phenomena",
+          "system",
+          "transfer",
+          "translation of english text into american sign language asl animation"
+        ],
+        "extra": [
+          "american sign language animation",
+          "english text translation",
+          "new semantic representation",
+          "spatially complex american sign language phenomena",
+          "traditional machine translation architectural design"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 4,
+        "missing": [
+          "translation  of  English text  into  American Sign Language (ASL) animation",
+          "MT architectural designs",
+          "spatially complex ASL phenomena",
+          "model",
+          "multi-pathway MT architecture design",
+          "transfer",
+          "direct approaches",
+          "system"
+        ],
+        "extra": [
+          "English text translation",
+          "American Sign Language animation",
+          "traditional machine translation architectural designs",
+          "spatially complex American Sign Language phenomena"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 3,
+        "missing": [
+          "mt architectural design",
+          "multi pathway mt architecture design",
+          "semantic representation",
+          "spatially complex asl phenomena",
+          "transfer",
+          "translation of english text into american sign language asl animation"
+        ],
+        "extra": [
+          "american sign language animation",
+          "english text translation",
+          "new semantic representation",
+          "spatially complex american sign language phenomena",
+          "traditional machine translation architectural design"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 4,
+        "missing": [
+          "translation  of  English text  into  American Sign Language (ASL) animation",
+          "MT architectural designs",
+          "spatially complex ASL phenomena",
+          "multi-pathway MT architecture design",
+          "transfer"
+        ],
+        "extra": [
+          "English text translation",
+          "American Sign Language animation",
+          "traditional machine translation architectural designs",
+          "spatially complex American Sign Language phenomena"
+        ]
+      }
+    },
+    {
+      "paper_id": "N06-1007",
+      "gold_entities": 14,
+      "gold_content_entities": 12,
+      "predicted_concepts": 8,
+      "predicted": [
+        "automatic acquisition of entailment relations",
+        "semantic equivalence",
+        "asymmetric relations",
+        "discourse relations",
+        "parsed corpus",
+        "verb entailment",
+        "argument structures",
+        "coherent text"
+      ],
+      "gold": [
+        "automatic acquisition  of  entailment relations",
+        "task",
+        "paraphrases acquisition",
+        "semantic equivalence",
+        "entailment acquisition",
+        "asymmetric, or directional, relations",
+        "local structure  of  coherent text",
+        "method",
+        "verb entailment",
+        "discourse relations",
+        "parsed corpus",
+        "verb entailment types",
+        "mapping  between  verbs",
+        "highly varied  argument structures"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "asymmetric or directional relation",
+          "entailment acquisition",
+          "highly varied argument structure",
+          "local structure of coherent text",
+          "mapping between verb",
+          "method",
+          "paraphras acquisition",
+          "task",
+          "verb entailment type"
+        ],
+        "extra": [
+          "argument structure",
+          "asymmetric relation",
+          "coherent text"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "task",
+          "paraphrases acquisition",
+          "entailment acquisition",
+          "local structure  of  coherent text",
+          "method",
+          "verb entailment types",
+          "mapping  between  verbs"
+        ],
+        "extra": [
+          "coherent text"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "asymmetric or directional relation",
+          "entailment acquisition",
+          "highly varied argument structure",
+          "local structure of coherent text",
+          "mapping between verb",
+          "paraphras acquisition",
+          "verb entailment type"
+        ],
+        "extra": [
+          "argument structure",
+          "asymmetric relation",
+          "coherent text"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "paraphrases acquisition",
+          "entailment acquisition",
+          "local structure  of  coherent text",
+          "verb entailment types",
+          "mapping  between  verbs"
+        ],
+        "extra": [
+          "coherent text"
+        ]
+      }
+    },
+    {
+      "paper_id": "P06-1052",
+      "gold_entities": 11,
+      "gold_content_entities": 9,
+      "predicted_concepts": 8,
+      "predicted": [
+        "redundancy elimination problem",
+        "underspecified semantic representation",
+        "scope ambiguity",
+        "mutually equivalent readings",
+        "underspecified chart representations",
+        "dominance graphs",
+        "large-scale grammars",
+        "negligible runtime"
+      ],
+      "gold": [
+        "algorithm",
+        "redundancy elimination problem",
+        "underspecified semantic representation (USR)",
+        "scope ambiguity",
+        "USR",
+        "equivalent readings",
+        "underspecified chart representations",
+        "dominance graphs",
+        "it",
+        "large-scale grammars",
+        "degree of  ambiguity"
+      ],
+      "concepts_all_exact": {
+        "tp": 5,
+        "missing": [
+          "algorithm",
+          "degree of ambiguity",
+          "equivalent reading",
+          "it",
+          "underspecified semantic representation usr",
+          "usr"
+        ],
+        "extra": [
+          "mutually equivalent reading",
+          "negligible runtime",
+          "underspecified semantic representation"
+        ]
+      },
+      "concepts_all_relaxed": {
+        "tp": 7,
+        "missing": [
+          "algorithm",
+          "USR",
+          "it",
+          "degree of  ambiguity"
+        ],
+        "extra": [
+          "negligible runtime"
+        ]
+      },
+      "concepts_content_exact": {
+        "tp": 5,
+        "missing": [
+          "degree of ambiguity",
+          "equivalent reading",
+          "underspecified semantic representation usr",
+          "usr"
+        ],
+        "extra": [
+          "mutually equivalent reading",
+          "negligible runtime",
+          "underspecified semantic representation"
+        ]
+      },
+      "concepts_content_relaxed": {
+        "tp": 7,
+        "missing": [
+          "USR",
+          "degree of  ambiguity"
+        ],
+        "extra": [
+          "negligible runtime"
+        ]
+      }
+    }
+  ],
+  "benchmark": "SciERC",
+  "task": "scientific concept extraction + paper-concept edge construction",
+  "model": "qwen3.5:4b",
+  "base_url": "http://localhost:11434/v1",
+  "seed": 42,
+  "limit": 20,
+  "generated_at": "2026-11-09T21:25:08.726916+00:00",
+  "elapsed_seconds": 3571.0,
+  "failures": {},
+  "notes": [
+    "Gold items are unique SciERC entity mentions per abstract.",
+    "Exact matching uses lowercased, singularised, punctuation-free strings.",
+    "Relaxed matching uses token Jaccard overlap >= 0.5.",
+    "Typed SciERC relations are not scored: the pipeline does not predict them.",
+    "SciERC raw files contain abstracts only; the paper ID is used as the title placeholder."
+  ]
+}
