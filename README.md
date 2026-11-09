@@ -333,6 +333,7 @@ Project documents:
 - [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md) — vault ontology and concept canonicalization;
 - [docs/LLM_LAYER.md](docs/LLM_LAYER.md) — prompts, validation and synthesis;
 - [docs/KG_METRICS.md](docs/KG_METRICS.md) — standard metrics for KG benchmarks and what to report;
+- [docs/LitGraphAgent_Handbook.pdf](docs/LitGraphAgent_Handbook.pdf) — full 60+ page technical handbook for newcomers (architecture, agents, metrics, runbook);
 - [docs/kp2/README.md](docs/kp2/README.md) — milestone 2 report, slides, demo script and contribution evidence.
 
 ## Contributors
