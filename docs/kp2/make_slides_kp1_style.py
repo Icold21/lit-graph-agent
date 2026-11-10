@@ -754,17 +754,17 @@ def slide_example(prs, blank):
         ),
     ]
     for index, (title, body, footer_text, pale, accent) in enumerate(cards):
-        y = 1.55 + index * 1.44
-        shadow_card(slide, 8.20, y, 4.40, 1.34, fill=pale, line=accent, radius=0.10)
+        y = 1.55 + index * 1.46
+        shadow_card(slide, 8.20, y, 4.40, 1.38, fill=pale, line=accent, radius=0.10)
         textbox(slide, 8.42, y + 0.08, 3.95, 0.30, title, 18, accent, True)
-        textbox(slide, 8.42, y + 0.38, 3.95, 0.60, body, 14, MUTED, line_spacing=1.0)
-        textbox(slide, 8.42, y + 1.06, 3.95, 0.20, footer_text, 14, SOFT)
+        textbox(slide, 8.42, y + 0.40, 3.95, 0.60, body, 14, MUTED, line_spacing=1.0)
+        textbox(slide, 8.42, y + 1.12, 3.95, 0.20, footer_text, 14, SOFT)
 
-    shadow_card(slide, 0.75, 5.95, 11.83, 0.55, fill=PALE_TEAL, line=TEAL, radius=0.12)
+    shadow_card(slide, 0.75, 6.02, 11.83, 0.50, fill=PALE_TEAL, line=TEAL, radius=0.12)
     textbox(
         slide,
         1.0,
-        6.07,
+        6.12,
         11.3,
         0.28,
         "8 источников → 57 концептов → 65 узлов, 62 связи · QA: 0 errors",
@@ -775,7 +775,7 @@ def slide_example(prs, blank):
     textbox(
         slide,
         0.78,
-        6.60,
+        6.62,
         11.8,
         0.25,
         "Определения — из Concepts/*.md; граф построен по реальным [[wikilinks]].",
