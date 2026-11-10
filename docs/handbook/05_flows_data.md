@@ -1,168 +1,137 @@
 # 5. Сквозные сценарии и данные
 
-## 5.1. Сценарий create: из темы в vault
+## 5.1. Как тема превращается в vault
 
-Пользователь запускает:
+Сценарий создания базы начинается с команды CLI. Пользователь передаёт
+уникальный `--id`, тему, требования, формат цитирования и квоту статей. CLI
+проверяет аргументы, создаёт или открывает vault, загружает настройки и
+передаёт управление Lead-агенту.
 
-```bash
-litgraph \
-  --id "transformer_circuits" \
-  --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
-  --requirements "Peer-reviewed or high-impact preprints published after 2021" \
-  --format "APA 7th" \
-  --max-papers 5
-```
+Lead формирует пустое состояние и запускает LangGraph. Первый узел,
+`plan_request`, решает, нужен ли LLM для выбора поисковых движков. Если
+пользователь передал `--engines`, план строится вручную; если `--no-router`,
+используется эвристика; иначе модели предлагается выбрать primary и fallback
+из каталога. `finalize_plan` валидирует это решение через `SearchRouter` и
+сохраняет `search_plan` в состоянии и будущем `_state.json`.
 
-Что происходит по шагам:
+Следующий узел, `search`, обращается к выбранным движкам. Если primary даёт
+мало результатов, подключается fallback. Кандидаты дедуплицируются по DOI,
+URL и названию, а каждый кандидат получает `source_engine`. Затем `validate`
+просит LLM проверить тему и требования. Кандидаты, которые не прошли порог,
+отбрасываются, а причина остаётся в логах.
 
-1. **CLI** проверяет аргументы, создаёт/открывает vault, загружает настройки.
-2. **Lead** создаёт пустое состояние и запускает LangGraph.
-3. **plan_request** решает, нужен ли LLM для выбора движков.
-4. **choose_engines** просит модель выбрать primary/fallback из каталога.
-5. **finalize_plan** валидирует план и сохраняет `search_plan`.
-6. **search** ищет кандидатов, дедуплицирует, помечает `source_engine`.
-7. **validate** проверяет тему и требования; кандидаты без прохода
-   отбрасываются.
-8. Если статей мало, **suggest_queries** генерирует подзапросы и цикл
-   повторяется (до 3 раундов).
-9. **rank_select** сортирует по наукометрическому скору и применяет elbow
-   cutoff.
-10. Для каждой выбранной статьи:
-    - **expand_citations** добавляет references/citations;
-    - **synthesize** извлекает summary/findings/methodology/limitations/
-      concepts;
-    - в `--deep` — **fetch_pages** и **ground_concepts**;
-    - **commit_paper** добавляет статью в `base`.
-11. **rebuild_graph** канонизирует концепты и строит рёбра.
-12. **define_concepts** пишет определения концептов.
-13. **bibliography** собирает цитаты.
-14. **link_network** строит типизированные связи.
-15. **overview** пишет общий обзор.
-16. **flush** записывает vault.
-17. **audit** проверяет ссылки, frontmatter, дубли, сирот, целостность.
+Если после валидации статей меньше квоты, `suggest_queries` генерирует
+подзапросы, и цикл `search → validate` повторяется. Всего допускается до трёх
+раундов. `seen_ids` не даёт бесконечно возвращать одни и те же статьи. Когда
+статей достаточно или раунды закончились, `rank_select` сортирует кандидатов
+по наукометрическому скору и применяет elbow cutoff. В результате остаётся
+«голова» списка — те статьи, которые действительно стоит обрабатывать.
 
-В конце пользователь видит таблицу выбранных статей и QA-отчёт.
+Дальше начинается ingestion. Для каждой выбранной статьи `expand_citations`
+подтягивает references и citations и превращает их в рёбра `cites`. Затем
+`synthesize` извлекает summary, findings, methodology, limitations и
+концепты. В deep-режиме `fetch_pages` скачивает PDF, а `ground_concepts`
+привязывает концепты к страницам. После этого `commit_paper` добавляет статью
+в `base`, и цикл повторяется для следующей статьи.
 
-## 5.2. Сценарий update: продолжить базу
+Когда все статьи обработаны, `rebuild_graph` канонизирует концепты и строит
+рёбра. `define_concepts` пишет определения концептов батчами. `bibliography`
+собирает цитаты, `link_network` строит типизированные связи, `overview` пишет
+общий обзор. `flush` записывает vault, а `audit` проверяет ссылки, frontmatter,
+дубли, сирот и целостность. В конце пользователь видит таблицу выбранных
+статей и QA-отчёт.
 
-```bash
-litgraph \
-  --id "transformer_circuits" \
-  --update "Sparse Autoencoders and Superposition in Language Models" \
-  --max-papers 2
-```
+Эта последовательность важна не только как список шагов. Она показывает, где
+именно принимаются решения. Поиск — это решение Retrieval и LLM. Отбор — это
+решение Validator и Ranking. Извлечение — это решение Prompt. Граф — это
+решение Graph. Проверка — это решение QA. Если результат плохой, можно
+понять, на каком шаге он стал плохим, вместо того чтобы винить «ИИ вообще».
 
-Отличия от create:
+## 5.2. Как работает обновление базы
 
-- Lead загружает `_state.json` и передаёт существующую базу в workflow;
-- `queries=[directive]`, а тема = исходная тема + директива;
-- после validation сразу идёт ingestion, без повторного rank_select;
-- новые статьи добавляются к старым;
-- существующие определения концептов не перезаписываются;
-- в конце `save_state` и `audit`.
+Обновление начинается с `--update`. Lead загружает `_state.json` и передаёт
+существующую базу в workflow. Тема становится комбинацией исходной темы и
+директивы, а `queries=[directive]`. Это важно: обновление не должно
+пересобирать всю базу с нуля и не должно терять старые статьи.
 
-Это позволяет расширять базу неделями, не теряя предыдущую работу.
+После валидации workflow не делает повторный `rank_select`, потому что новые
+статьи уже известны. Он сразу идёт в `expand_citations`, затем в синтез и
+commit. Когда новые статьи добавлены, `rebuild_graph` перестраивает граф, но
+`GraphAgent` сохраняет существующие определения концептов. `save_state`
+записывает обновлённый `_state.json`, а `audit` проверяет итог.
 
-## 5.3. Сценарий deep: PDF и grounding
+Главная гарантия обновления: старые данные не перезаписываются. Если
+пользователь отредактировал определение концепта вручную, `--update` не
+затрёт его. Если новая статья упоминает уже известный концепт, hub
+обновится, но определение останется. Это делает базу «живой»: её можно
+расширять неделями, не боясь потерять ручную работу.
 
-```bash
-litgraph --id "transformer_circuits" --update "Induction heads" --deep
-```
+## 5.3. Deep-режим и grounding
 
-В deep-режиме после синтеза:
+Deep-режим включается флагом `--deep`. После синтеза статьи система
+скачивает open-access PDF и извлекает текст постранично. Затем
+`ground_concepts` ищет упоминания концептов по страницам и заполняет
+`ConceptMention`: `concept_name`, `paper_title`, `page_number`,
+`context_snippet`.
 
-1. `fetch_pages` скачивает open-access PDF;
-2. `ground_concepts` ищет упоминания концептов по страницам;
-3. в `ConceptMention` появляются `page_number` и `context_snippet`;
-4. в концепт-хабе появляются ссылки вида «источник, страница, цитата».
+Это нужно, чтобы в концепт-хабе появились ссылки вида «источник, страница,
+цитата», а не просто список статей. Пользователь может открыть страницу PDF и
+проверить, действительно ли концепт там упоминается. Это повышает доверие к
+графу.
 
-Если PDF недоступен, статья всё равно обрабатывается по абстракту. Deep не
-является обязательным для работы.
+Если PDF недоступен, deep-режим деградирует: grounding пропускается, статья
+всё равно обрабатывается по абстракту. Deep не является обязательным для
+работы; это дополнительный слой качества.
 
-## 5.4. Сценарий check, list, delete
+## 5.4. Проверка, список и удаление
 
-```bash
-litgraph --list
-litgraph --check --id "transformer_circuits"
-litgraph --delete --id "transformer_circuits"
-```
-
-- `--list` показывает существующие базы.
-- `--check` запускает QA и печатает issues.
-- `--delete` удаляет базу (осторожно: это необратимо).
+`--check` запускает QA и печатает issues. `--list` показывает существующие
+базы. `--delete` удаляет базу; это необратимо, поэтому команда должна
+использоваться осторожно. `--check` полезен не только перед защитой, но и в
+повседневной работе: после большого обновления он быстро показывает, не
+появились ли битые ссылки или сироты.
 
 ## 5.5. Модель данных
 
-Основные модели лежат в `lit_graph/models.py`.
+Модели лежат в `lit_graph/models.py`. Понимание этих классов важно, потому что
+именно они описывают, что система считает «статьёй», «концептом» и «связью».
 
-### Paper
+`Paper` — статья. В ней есть идентификация (`id`, `title`, `authors`, `year`,
+`venue`, `doi_or_url`, `pdf_url`, `source_engine`), наукометрия
+(`citation_count`, `influential_citation_count`, `citation_velocity`,
+`influential_ratio`, `objective_scientific_score`, `normalized_weight`,
+`is_elbow_selected`), валидация (`topic_relevance_score`,
+`topic_relevance_reason`, `requirements_met`, `requirements_reason`,
+`scientific_value_score`), синтез (`summary_en`, `key_findings_en`,
+`methodology_en`, `limitations_en`, `extracted_concepts`,
+`extracted_concepts_all`, `concept_mentions`), связи
+(`referenced_paper_titles`, `citing_paper_titles`, `related_paper_titles`) и
+библиография (`formatted_citation`).
 
-`Paper` — статья. Ключевые поля:
+Поле `extracted_concepts` — это усечённый список до
+`MAX_CONCEPTS_PER_PAPER`. Поле `extracted_concepts_all` — полный список до
+усечения. Зачем два списка? Потому что каноникализация может отфильтровать
+часть концептов, а при `--update` нужно иметь возможность пересчитать граф,
+не потеряв идеи, которые были отфильтрованы раньше. Это пример того, как
+деталь хранения влияет на качество обновлений.
 
-- идентификация: `id`, `title`, `authors`, `year`, `venue`, `doi_or_url`,
-  `pdf_url`, `source_engine`;
-- наукометрия: `citation_count`, `influential_citation_count`,
-  `citation_velocity`, `influential_ratio`, `objective_scientific_score`,
-  `normalized_weight`, `is_elbow_selected`;
-- валидация: `topic_relevance_score`, `topic_relevance_reason`,
-  `requirements_met`, `requirements_reason`, `scientific_value_score`;
-- синтез: `summary_en`, `key_findings_en`, `methodology_en`,
-  `limitations_en`, `extracted_concepts`, `extracted_concepts_all`,
-  `concept_mentions`;
-- связи: `referenced_paper_titles`, `citing_paper_titles`,
-  `related_paper_titles`;
-- библиография: `formatted_citation`.
+`ConceptHub` — концепт. В нём есть `name`, `summary_en`, `aggregated_score`,
+`normalized_weight` и `mentions`. `ConceptMention` — упоминание концепта в
+статье: `concept_name`, `paper_title`, `page_number`, `context_snippet`.
+`GraphEdge` — ребро: `source_title`, `target_title`, `relation_type`.
+`LiteratureBaseState.add_edge` не добавляет дубликаты, сравнивая нормализованные
+концы и тип.
 
-`extracted_concepts` — усечённый список до `MAX_CONCEPTS_PER_PAPER`;
-`extracted_concepts_all` — полный, чтобы повторная каноникализация не теряла
-идеи.
+`LiteratureBaseState` — вся база: `base_id`, `topic`, `requirements`,
+`citation_format`, `overall_summary_en`, `papers`, `concepts`, `edges`,
+`bibliography_en`, `search_plan`, `created_at`, `updated_at`. Это состояние
+сериализуется в `_state.json` и восстанавливается при следующем запуске.
 
-### ConceptHub
-
-`ConceptHub` — концепт:
-
-- `name` — display-имя;
-- `summary_en` — определение;
-- `aggregated_score` — суммарный вес;
-- `normalized_weight` — вес 0..1 для визуализации;
-- `mentions` — список `ConceptMention`.
-
-### ConceptMention
-
-`ConceptMention` — упоминание концепта в статье:
-
-- `concept_name`;
-- `paper_title`;
-- `page_number`;
-- `context_snippet`.
-
-### GraphEdge
-
-`GraphEdge` — ребро:
-
-- `source_title`;
-- `target_title`;
-- `relation_type` (`cites`, `relates_to` и т.д.).
-
-`LiteratureBaseState.add_edge` не добавляет дубликаты.
-
-### LiteratureBaseState
-
-`LiteratureBaseState` — вся база:
-
-- `base_id`, `topic`, `requirements`, `citation_format`;
-- `overall_summary_en`;
-- `papers: Dict[str, Paper]`;
-- `concepts: Dict[str, ConceptHub]`;
-- `edges: List[GraphEdge]`;
-- `bibliography_en`;
-- `search_plan`;
-- `created_at`, `updated_at`.
-
-## 5.6. `_state.json`
+## 5.6. `_state.json` как источник правды
 
 `_state.json` — JSON-представление `LiteratureBaseState`. Он лежит в корне
-vault. Пример (сокращённо):
+vault. В нём есть статьи, концепты, рёбра, библиография, обзор, `search_plan`
+и временные метки. Пример сокращённо выглядит так:
 
 ```json
 {
@@ -196,108 +165,54 @@ vault. Пример (сокращённо):
 }
 ```
 
-Запись атомарная: `.json.tmp` → replace. Если процесс упал, старый файл
-остаётся целым.
+Запись атомарная: сначала создаётся `.json.tmp`, затем файл заменяется. Если
+процесс упал, старый файл остаётся целым. Это особенно важно для длинных
+прогонов на локальной модели, которые могут занимать десятки минут.
 
 ## 5.7. Структура vault
 
-```text
-vaults/transformer_circuits/
-├── Formatted_Bibliography.md
-├── _Bibliography.md
-├── _Overview_Synthesis.md
-├── _Agent_Activity.md
-├── _state.json
-├── references.bib
-├── Sources/
-│   ├── <paper title>.md
-│   └── <external reference>.md
-└── Concepts/
-    └── <concept name>.md
-```
+Vault — это папка Obsidian. В корне лежат `Formatted_Bibliography.md`,
+`_Bibliography.md`, `_Overview_Synthesis.md`, `_Agent_Activity.md`,
+`_state.json` и `references.bib`. В `Sources/` лежат заметки источников и
+внешние заглушки, в `Concepts/` — концепт-хабы.
 
-### Заметка источника
+Заметка источника начинается с frontmatter. В нём есть `id`, `title`,
+`authors`, `year`, `venue`, `url`, `pdf_url`, `source_engine`,
+`citation_count`, `citation_velocity`, `objective_score`, `node_weight` и
+`type: literature_note`. Дальше идут секции: Formatted Citation, Executive
+Summary, Key Findings, Methodology & Limitations, Knowledge Graph
+Connections, Typed Graph Relations (если есть) и Abstract.
 
-Frontmatter:
+Концепт-хаб содержит `concept`, `aggregated_score`, `node_weight` и
+`type: concept_hub`. Внутри — определение и grounded citations с страницами и
+цитатами. Внешняя заглушка содержит `title` и `type: external_reference`, а
+внутри — ссылки на источники, которые её цитируют.
 
-```yaml
-id: "2401.00001"
-title: "Example Paper"
-authors: ["A. Author"]
-year: 2024
-venue: "arXiv"
-source_engine: "arxiv"
-citation_count: 42
-citation_velocity: 10.5
-objective_score: 12.3
-node_weight: 0.71
-type: literature_note
-```
-
-Секции:
-
-- Formatted Citation;
-- Executive Summary;
-- Key Findings;
-- Methodology & Limitations;
-- Knowledge Graph Connections;
-- Typed Graph Relations (если есть);
-- Abstract.
-
-### Концепт-хаб
-
-Frontmatter:
-
-```yaml
-concept: "Induction Head"
-aggregated_score: 4.2
-node_weight: 0.83
-type: concept_hub
-```
-
-Секции:
-
-- Concept Definition & Consensus;
-- Grounded Citations & Page References.
-
-### Внешняя заглушка
-
-```yaml
-title: "External Paper"
-type: external_reference
-```
-
-Секция «Cited within this vault» со ссылками на источники.
-
-### Хаб-файлы
-
-- `_Overview_Synthesis.md` — обзор, индекс, типизированные связи;
-- `_Bibliography.md` — интерактивная библиография с `[[links]]`;
-- `Formatted_Bibliography.md` — чистый список для копирования;
-- `references.bib` — BibTeX;
-- `_Agent_Activity.md` — журнал: кто, что, когда, сколько заняло.
+Хаб-файлы собирают базу воедино. `_Overview_Synthesis.md` содержит обзор,
+индекс и типизированные связи. `_Bibliography.md` — интерактивная
+библиография с `[[links]]`. `Formatted_Bibliography.md` — чистый список для
+копирования. `references.bib` — BibTeX. `_Agent_Activity.md` — журнал: кто,
+что, когда и сколько заняло.
 
 ## 5.8. Почему vault, а не база данных
 
-Vault выбран по трём причинам:
+Vault выбран по трём причинам. Во-первых, прозрачность: каждую заметку можно
+открыть и поправить руками. Во-вторых, локальность: нет облачной зависимости и
+vendor lock-in. В-третьих, Obsidian уже даёт граф, обратные ссылки и поиск;
+не нужно писать собственный UI.
 
-1. **Прозрачность.** Каждую заметку можно открыть и поправить руками.
-2. **Локальность.** Нет облачной зависимости и vendor lock-in.
-3. **Obsidian.** Граф, обратные ссылки и поиск уже есть; не нужно писать UI.
-
-Минус — нет транзакций и строгой схемы. Поэтому в проекте есть QA,
+Минус в том, что нет транзакций и строгой схемы. Поэтому в проекте есть QA,
 детерминированные имена, YAML-экранирование и `_state.json` как источник
-правды.
+правды. Если бы мы выбрали базу данных, пришлось бы писать миграции и UI, а
+пользователь потерял бы возможность править заметки в любимом редакторе.
 
 ## 5.9. Что происходит при повторном запуске
 
-- `_state.json` загружается;
-- существующие статьи не дублируются по `id`;
-- существующие концепты переиспользуются;
-- определения не перезаписываются, если уже есть;
-- новые статьи добавляются;
-- граф перестраивается, но пользовательские настройки `graph.json`
-  сохраняются;
-- QA проверяет итог.
+При повторном запуске `_state.json` загружается. Существующие статьи не
+дублируются по `id`, существующие концепты переиспользуются, определения не
+перезаписываются, новые статьи добавляются. Граф перестраивается, но
+пользовательские настройки `graph.json` сохраняются. QA проверяет итог.
 
-Именно это делает базу «живой», а не одноразовым экспортом.
+Именно это делает базу «живой», а не одноразовым экспортом. Пользователь
+может запускать обновления по мере появления новых статей, и база будет
+расти, сохраняя структуру и ручные правки.

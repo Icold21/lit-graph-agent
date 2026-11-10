@@ -2,24 +2,21 @@
 
 ## 9.1. Установка
 
-```bash
-git clone https://github.com/Icold21/LitGraphAgent.git
-cd LitGraphAgent
-python -m venv .venv
+Проект ставится как обычный Python-пакет. Сначала клонируйте репозиторий,
+затем создайте виртуальное окружение и установите зависимости в режиме
+разработки. На Windows активация окружения выглядит как
+`.venv\Scripts\activate`, на macOS и Linux — `source .venv/bin/activate`.
+Команда `pip install -e ".[dev]"` ставит и сам пакет, и инструменты разработки:
+pytest, ruff и другие.
 
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
-
-pip install -e ".[dev]"
-```
-
-`pypdf` входит в основные зависимости: он нужен для `--deep`.
+`pypdf` входит в основные зависимости, потому что он нужен для deep-режима.
+Если вы не планируете скачивать PDF, это всё равно не лишняя зависимость:
+deep-режим должен работать «из коробки», а не требовать отдельной установки.
 
 ## 9.2. Настройка `.env`
 
-Создайте `.env` в корне. Пример для локальной Ollama:
+Все настройки читаются из `.env` в корне проекта. Для локальной Ollama
+типичный конфиг выглядит так:
 
 ```bash
 LLM_API_KEY=ollama
@@ -47,268 +44,185 @@ CACHE_ENABLED=true
 CACHE_TTL_HOURS=168
 ```
 
-Для облачной модели:
+Для облачной модели достаточно поменять три переменные: `LLM_API_KEY`,
+`LLM_BASE_URL` и `LLM_MODEL`. Например, для DeepSeek это `sk-...`,
+`https://api.deepseek.com` и `deepseek-chat`. Для OpenRouter, Groq, OpenAI или
+vLLM — соответственно их endpoint и модель. Главное, чтобы endpoint был
+OpenAI-совместимым.
 
-```bash
-LLM_API_KEY=sk-...
-LLM_BASE_URL=https://api.deepseek.com
-LLM_MODEL=deepseek-chat
-```
-
-Не коммитьте `.env` с реальным ключом. В репозитории есть `.env.example`.
+Не коммитьте `.env` с реальным ключом. В репозитории есть `.env.example`,
+который показывает структуру без секретов. Если ключ случайно попал в git,
+его нужно отозвать и переписать историю; это не та ошибка, которую можно
+«замазать» следующим коммитом.
 
 ## 9.3. Проверка окружения
 
-```bash
-litgraph --version
-litgraph --team
-litgraph --tools
-```
-
-`--team` показывает пять ролей и владельцев. `--tools` показывает каталог
-поисковых движков, из которого выбирает модель.
+Перед первым запуском полезно проверить три команды. `litgraph --version`
+показывает версию. `litgraph --team` показывает пять ролей и владельцев.
+`litgraph --tools` показывает каталог поисковых движков, из которого выбирает
+модель. Если `--tools` падает, значит, не установились зависимости или
+сломан импорт; если `--team` показывает не пять ролей, значит, вы запускаете
+не ту версию пакета.
 
 ## 9.4. Основные команды
 
-### Создать базу
+Создание базы — главная команда. Она принимает `--id`, `--topic`,
+`--requirements`, `--format` и `--max-papers`. `--id` задаёт имя папки vault,
+`--topic` — тему, `--requirements` — ограничения (например, «peer-reviewed
+after 2021»), `--format` — формат цитирования, `--max-papers` — квоту. Если
+база с таким `--id` уже существует, CLI попросит использовать `--update`.
 
-```bash
-litgraph \
-  --id "transformer_circuits" \
-  --topic "Mechanistic Interpretability and Induction Heads in Transformers" \
-  --requirements "Peer-reviewed or high-impact preprints published after 2021" \
-  --format "APA 7th" \
-  --max-papers 5
-```
+Обновление базы принимает `--update` с директивой. Это может быть новая тема,
+уточнение или запрос на добавление конкретных работ. `--max-papers` задаёт,
+сколько новых статей добавить. Старые статьи и определения не
+перезаписываются.
 
-### Обновить базу
+Deep-режим включается флагом `--deep` при create или update. Он скачивает
+open-access PDF и привязывает концепты к страницам. Если PDF нет, deep
+деградирует, но не ломает запуск.
 
-```bash
-litgraph \
-  --id "transformer_circuits" \
-  --update "Sparse Autoencoders and Superposition in Language Models" \
-  --max-papers 3
-```
+Список, проверка и удаление — служебные команды. `--list` показывает базы,
+`--check --id ...` запускает QA, `--delete --id ...` удаляет базу. Удаление
+необратимо, поэтому его стоит использовать только после бэкапа.
 
-### Deep-режим
-
-```bash
-litgraph --id "transformer_circuits" --update "Induction heads" --deep
-```
-
-### Список, проверка, удаление
-
-```bash
-litgraph --list
-litgraph --check --id "transformer_circuits"
-litgraph --delete --id "transformer_circuits"
-```
-
-### Переопределить движки
-
-```bash
-litgraph --id "transformer_circuits" --update "Induction heads" --engines arxiv,web
-litgraph --id "transformer_circuits" --update "Induction heads" --no-router
-```
-
-### Отключить кэш или elbow
-
-```bash
-litgraph --id "transformer_circuits" --update "..." --no-cache
-litgraph --id "transformer_circuits" --update "..." --no-elbow
-```
-
-### Логи
-
-```bash
-litgraph --verbose ...
-```
+Флаги `--engines` и `--no-router` управляют выбором движков. `--engines
+arxiv,web` заставляет использовать конкретные движки, `--no-router`
+отключает LLM-роутер и включает эвристику. `--no-cache` отключает дисковый
+кэш, `--no-elbow` отключает метод локтя, `--verbose` включает debug-логи.
 
 ## 9.5. Тесты и линтер
 
-```bash
-pytest -q
-ruff check lit_graph tests benchmarks
-```
-
-Ожидаемо: 55 passed, ruff без ошибок.
+Перед коммитом полезно запустить `pytest -q` и
+`ruff check lit_graph tests benchmarks`. Ожидаемо: 55 passed и «All checks
+passed». Если тесты падают, не коммитьте; если падает ruff, исправьте стиль
+или добавьте обоснованное исключение. CI всё равно запустит эти команды на
+Python 3.10–3.13, поэтому локальная проверка экономит время.
 
 ## 9.6. Бенчмарк
 
-```bash
-# 1. Скачать SciERC
-curl -L -o sciERC_raw.tar.gz \
-  https://nlp.cs.washington.edu/sciIE/data/sciERC_raw.tar.gz
-tar -xzf sciERC_raw.tar.gz
+Бенчмарк требует SciERC. Скачайте `sciERC_raw.tar.gz` с сайта SciERC,
+распакуйте и передайте путь к `raw_data` в `--data-dir`. Затем запустите
+`benchmarks/scierc_benchmark.py` с `--limit`, `--seed`, `--model`,
+`--output` и `--checkpoint`. Бенчмарк умеет resume: если прервать, повторный
+запуск продолжит с checkpoint. Failures записываются в JSON, а не роняют
+весь прогон.
 
-# 2. Запустить
-python benchmarks/scierc_benchmark.py \
-  --data-dir ./raw_data \
-  --limit 20 \
-  --seed 42 \
-  --model qwen3.5:4b \
-  --base-url http://localhost:11434/v1 \
-  --output benchmarks/results/scierc_qwen3.5-4b-prompt8.json \
-  --checkpoint benchmarks/results/scierc_qwen3.5-4b-prompt8.jsonl
-
-# 3. Построить график
-python benchmarks/plot_results.py \
-  benchmarks/results/scierc_qwen3.5-4b-prompt8.json \
-  --output docs/kp2/assets/metrics_qwen3.5-4b-prompt8.png
-```
-
-Бенчмарк умеет resume: если прервать, повторный запуск продолжит с
-checkpoint. Failures записываются в JSON, а не роняют весь прогон.
+После прогона постройте график командой
+`python benchmarks/plot_results.py <result.json> --output <png>`. Скрипт
+читает JSON и рисует precision/recall/F1 по четырём сигналам. График можно
+вставить в отчёт или презентацию.
 
 ## 9.7. Типичные проблемы
 
-### `pull model manifest: file does not exist`
+Самая частая проблема — модели нет в реестре Ollama. Например, `qwen3.5:3b`
+не существует; есть `qwen3.5:4b`. Если вы видите `pull model manifest: file
+does not exist`, проверьте `ollama list` и имя модели.
 
-Модели нет в реестре Ollama. Например, `qwen3.5:3b` не существует; есть
-`qwen3.5:4b`. Проверьте `ollama list`.
+Вторая проблема — модель очень медленная. Локальная 4B на слабом GPU может
+давать 1–2 токена в секунду. Это нормально для ноутбука. Увеличьте
+`--timeout`, закройте другие GPU-процессы, уменьшите `--limit` для теста.
+Если нужно быстро проверить пайплайн, используйте `qwen2.5:3b`, но помните,
+что качество будет ниже.
 
-### Модель очень медленная
+Третья проблема — таймауты. Поднимите `--timeout` и `--retries`. Для больших
+баз используйте checkpoint, чтобы не начинать заново. Если сеть нестабильна,
+включите кэш и повторы.
 
-Локальная 4B на слабом GPU может давать 1–2 токена/с. Это нормально для
-ноутбука. Увеличьте `--timeout`, закройте другие GPU-процессы, уменьшите
-`--limit` для теста.
-
-### Таймауты
-
-Поднимите `--timeout` и `--retries`. Для больших баз используйте checkpoint.
-
-### JSON-ошибки
-
-Санитайзер восстанавливает большинство случаев, но если модель стабильно
-ломает JSON, попробуйте другую модель или уменьшите батч.
-
-### Нет PDF в deep-режиме
-
-Не все статьи open-access. Deep-режим деградирует: статья обрабатывается по
-абстракту, grounding пропускается.
-
-### Битые ссылки в Obsidian
-
-Запустите `litgraph --check --id ...`. QA покажет unresolved links, orphans и
+Четвёртая — JSON-ошибки. Санитайзер восстанавливает большинство случаев, но
+если модель стабильно ломает JSON, попробуйте другую модель или уменьшите
+батч. Пятая — нет PDF в deep-режиме. Не все статьи open-access; deep
+деградирует, и это нормально. Шестая — битые ссылки в Obsidian. Запустите
+`litgraph --check --id ...`; QA покажет unresolved links, orphans и
 frontmatter issues.
 
-### Кириллица в PowerShell
-
-Если вывод Python ломается, задайте:
-
-```powershell
-$env:PYTHONIOENCODING='utf-8'
-```
+Седьмая — кириллица в PowerShell. Если вывод Python ломается, задайте
+`$env:PYTHONIOENCODING='utf-8'`. Это не проблема проекта, а особенность
+консоли.
 
 ## 9.8. Карта кода
 
-| Файл | Зачем |
-| --- | --- |
-| `lit_graph/agent/core.py` | Lead, жизненный цикл, CLI-интеграция |
-| `lit_graph/agent/workflow.py` | LangGraph, узлы, рёбра, activity |
-| `lit_graph/agent/graph_state.py` | `ResearchState`, events, reducer |
-| `lit_graph/agent/roles.py` | Роли и владельцы |
-| `lit_graph/agent/retrieval_agent.py` | Поиск, citations, PDF |
-| `lit_graph/search/` | Клиенты, каталог, router, ranking, PDF |
-| `lit_graph/agent/prompt_agent.py` | LLM-операции |
-| `lit_graph/agent/validator.py` | Валидация кандидатов |
-| `lit_graph/agent/synthesizer.py` | Синтез, определения, библиография, обзор |
-| `lit_graph/llm/prompts.py` | Все промпты |
-| `lit_graph/llm/providers.py` | Провайдеры LLM |
-| `lit_graph/agent/graph_agent.py` | Онтология, rebuild, flush |
-| `lit_graph/agent/concepts.py` | Каноникализация |
-| `lit_graph/storage/obsidian_vault.py` | Запись заметок, state |
-| `lit_graph/storage/base_manager.py` | Жизненный цикл баз |
-| `lit_graph/agent/evaluation_agent.py` | QA-агент |
-| `lit_graph/qa/vault_checks.py` | Проверки |
-| `lit_graph/models.py` | Модели данных |
-| `lit_graph/cli.py` | CLI |
-| `lit_graph/config.py` | Настройки |
-| `tests/` | 55 тестов |
-| `benchmarks/` | SciERC harness и результаты |
+`lit_graph/agent/core.py` — Lead и жизненный цикл. `workflow.py` — LangGraph,
+узлы и рёбра. `graph_state.py` — `ResearchState`, events и reducer.
+`roles.py` — роли и владельцы. `retrieval_agent.py` — поиск, citations и PDF.
+`search/` — клиенты, каталог, router, ranking и PDF. `prompt_agent.py` —
+LLM-операции. `validator.py` — валидация кандидатов. `synthesizer.py` —
+синтез, определения, библиография и обзор. `llm/prompts.py` — все промпты.
+`llm/providers.py` — провайдеры. `graph_agent.py` — онтология, rebuild и
+flush. `concepts.py` — каноникализация. `storage/obsidian_vault.py` — запись
+заметок и state. `storage/base_manager.py` — жизненный цикл баз.
+`evaluation_agent.py` — QA-агент. `qa/vault_checks.py` — проверки.
+`models.py` — модели данных. `cli.py` — CLI. `config.py` — настройки.
+`tests/` — 55 тестов. `benchmarks/` — SciERC harness и результаты.
 
 ## 9.9. Как добавить нового агента
 
-1. Добавить роль в `agent/roles.py`.
-2. Написать сервис-класс с обычными методами.
-3. Инстанцировать в `agent/core.py`.
-4. Добавить узлы и рёбра в `agent/workflow.py`.
-5. Добавить тест.
-6. Обновить `CONTRIBUTORS.md`, `docs/AGENT_TEAM.md`, `README.md`,
-   `.github/CODEOWNERS`.
+Новый агент добавляется в пять шагов. Сначала роль в `agent/roles.py`: ключ,
+title, owner, handle, responsibility, agent, modules. Затем сервис-класс с
+обычными методами, который не знает о LangGraph. Затем инстанцирование в
+`agent/core.py`. Затем узлы и рёбра в `agent/workflow.py`. И наконец тест,
+обновление `CONTRIBUTORS.md`, `docs/AGENT_TEAM.md`, `README.md` и
+`.github/CODEOWNERS`.
 
-Инварианты: агент не пишет данные другого агента напрямую; все промпты — в
-`llm/prompts.py`; все записи vault — через `GraphAgent`; QA не мутирует
-состояние.
+Инварианты те же: агент не пишет данные другого агента напрямую; все промпты
+— в `llm/prompts.py`; все записи vault — через `GraphAgent`; QA не мутирует
+состояние. Если новый агент должен писать в vault, он должен делать это через
+GraphAgent, а не открывать файлы сам.
 
 ## 9.10. Как добавить поисковый движок
 
-1. Описать движок в `search/tools.py`.
-2. Добавить клиент в `search/`.
-3. Подключить в `search/engine.py`.
-4. Добавить в каталог и тесты.
-5. Проверить `litgraph --tools`.
-
-Не добавляйте ветвление «если движок X» внутрь агента: каталог должен
-оставаться данными.
+Сначала опишите движок в `search/tools.py`: ключ, название, описание,
+сильные и слабые стороны, лучшие сценарии. Затем добавьте клиент в
+`search/`. Подключите его в `search/engine.py`. Добавьте в каталог и тесты.
+Проверьте `litgraph --tools`. Не добавляйте ветвление «если движок X» внутрь
+агента: каталог должен оставаться данными.
 
 ## 9.11. Как изменить промпт
 
-1. Найти функцию в `llm/prompts.py`.
-2. Изменить текст, сохранив требование JSON.
-3. Проверить, что `synthesizer.py`/`validator.py` действительно используют
-   эту функцию (раньше был дубликат inline-промпта).
-4. Прогнать `pytest` и бенчмарк на 5–10 абстрактах.
-5. Обновить метрики и документацию.
+Найдите функцию в `llm/prompts.py`, измените текст, сохранив требование JSON.
+Проверьте, что `synthesizer.py` или `validator.py` действительно используют
+эту функцию. Раньше был дубликат inline-промпта, и изменения не влияли на
+бенчмарк. Прогоните `pytest` и бенчмарк на 5–10 абстрактах. Обновите метрики
+и документацию. Не меняйте промпт «на глаз» без A/B: локальная модель может
+неожиданно ухудшиться.
 
 ## 9.12. Команда и роли
 
-| Участник | Роль | Зона |
-| --- | --- | --- |
-| Иван Холодило | Lead AI Engineer | Архитектура, LangGraph, CLI, состояние |
-| Вадим Лялькин | Graph & Knowledge Engineer | Онтология, `[[wikilinks]]`, Obsidian |
-| Нодар Чигладзе | Data / IR Engineer | arXiv, Semantic Scholar, web, ranking, PDF |
-| Давид Чигладзе | QA / Evaluation Engineer | QA, тесты, CI, бенчмарк |
-| Илья Синко | LLM Engineer | Промпты, валидация, синтез |
-
-Подробнее: `CONTRIBUTORS.md`, `docs/kp2/CONTRIBUTIONS.md`,
-`.github/CODEOWNERS`.
+Иван Холодило отвечает за архитектуру, LangGraph, CLI и состояние. Вадим
+Лялькин — за онтологию графа, `[[wikilinks]]` и Obsidian. Нодар Чигладзе — за
+arXiv, Semantic Scholar, web, ranking и PDF. Давид Чигладзе — за QA, тесты,
+CI и бенчмарк. Илья Синко — за промпты, валидацию и синтез. Подробнее:
+`CONTRIBUTORS.md`, `docs/kp2/CONTRIBUTIONS.md`, `.github/CODEOWNERS`.
 
 ## 9.13. Дорожная карта
 
-| Дата | Этап | Статус |
-| --- | --- | --- |
-| 6 октября | MVP: поиск, фильтрация, заметки | Выполнено |
-| 5 ноября | Модульный поиск и первые метрики | Выполнено |
-| 25 ноября | Тесты, стабилизация, калибровка | Частично |
-| 15 декабря | Финальный релиз, демо, документация | В работе |
+6 октября — MVP: поиск, фильтрация, заметки. 5 ноября — модульный поиск и
+первые метрики. 25 ноября — тесты, стабилизация, калибровка. 15 декабря —
+финальный релиз, демо и документация. Первые два этапа закрыты. Третий
+частично: тесты и QA есть, но калибровка ранжирования и end-to-end метрики
+поиска ещё не завершены.
 
-До финала:
-
-- 100 абстрактов, 3 seed, 2–3 модели;
-- triple-level F1, если появятся типы отношений;
-- precision@k/nDCG для поиска;
-- coverage, orphan rate, unresolved link rate;
-- p95 latency и стоимость прогона;
-- демо и скриншоты.
+До финала имеет смысл расширить бенчмарк до 100 абстрактов и 3 seed,
+добавить 2–3 модели, triple-level F1 (если появятся типы отношений),
+precision@k/nDCG для поиска, coverage, orphan rate, unresolved link rate,
+p95 latency и стоимость прогона, а также демо и скриншоты.
 
 ## 9.14. Риски
 
-| Риск | Причина | План |
-| --- | --- | --- |
-| Узкая оценка | 20 абстрактов, один seed | Расширить выборку |
-| Нет relation F1 | Пайплайн не предсказывает типы | Либо добавить типы, либо честно не считать |
-| Локальная модель медленная | 4B на слабом GPU | Таймауты, батчинг, меньший `--limit` |
-| Внешние API недоступны | Сеть/лимиты | Retry, cache, fallback |
-| Каноникализация ошибается | Эвристики | QA, ручная проверка, тесты |
-| Вклад участников | История git | Коммиты по зонам, подтверждение |
+Главный риск — узкая оценка: 20 абстрактов, один seed, только концепты. Это
+честно зафиксировано, но до КП3 нужно расширить выборку. Второй риск — нет
+relation F1, потому что пайплайн не предсказывает типы; это ограничение
+архитектуры, а не забытая метрика. Третий — локальная модель медленная и
+недетерминированная; таймауты, батчинг и меньший `--limit` помогают, но не
+устраняют проблему. Четвёртый — внешние API могут быть недоступны; retry,
+cache и fallback смягчают, но не гарантируют результат. Пятый — 
+каноникализация ошибается; QA и ручная проверка нужны. Шестой — вклад
+участников в git; коммиты по зонам и подтверждение помогают, но требуют
+дисциплины.
 
 ## 9.15. Что считать успехом
 
-Не «модель выдала красивый граф», а:
-
-- база воспроизводится;
-- QA не находит критичных ошибок;
-- метрики стабильны на нескольких seed;
-- пользователь может открыть vault и найти нужное;
-- каждый агент можно объяснить и протестировать отдельно.
+Успех — это не «модель выдала красивый граф». Это когда база воспроизводится,
+QA не находит критичных ошибок, метрики стабильны на нескольких seed,
+пользователь может открыть vault и найти нужное, а каждый агент можно
+объяснить и протестировать отдельно. Если эти пять условий выполнены, проект
+действительно готов к использованию, а не только к демонстрации.

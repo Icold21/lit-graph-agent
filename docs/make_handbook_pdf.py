@@ -7,9 +7,8 @@ import subprocess
 from pathlib import Path
 
 from docx import Document
-from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
@@ -235,6 +234,12 @@ def add_table(doc: Document, rows: list[list[str]]) -> None:
     table.style = "Table Grid"
     table.autofit = True
     for row_index, row in enumerate(rows):
+        tr_pr = table.rows[row_index]._tr.get_or_add_trPr()
+        cant_split = OxmlElement("w:cantSplit")
+        tr_pr.append(cant_split)
+        if row_index == 0:
+            header = OxmlElement("w:tblHeader")
+            tr_pr.append(header)
         for col_index in range(cols):
             cell = table.cell(row_index, col_index)
             set_cell_margins(cell)
@@ -286,11 +291,19 @@ def parse_markdown(doc: Document, path: Path, first_h1: bool) -> None:
     numbered: list[str] = []
     table_rows: list[list[str]] = []
     code_lines: list[str] = []
+    paragraph_lines: list[str] = []
     in_code = False
     seen_h1 = False
 
+    def flush_paragraph() -> None:
+        nonlocal paragraph_lines
+        if paragraph_lines:
+            add_body(doc, " ".join(paragraph_lines))
+            paragraph_lines = []
+
     def flush_bullets() -> None:
         nonlocal bullets, numbered
+        flush_paragraph()
         if bullets:
             add_bullets(doc, bullets)
             bullets = []
@@ -300,6 +313,7 @@ def parse_markdown(doc: Document, path: Path, first_h1: bool) -> None:
 
     def flush_table() -> None:
         nonlocal table_rows
+        flush_paragraph()
         if table_rows:
             add_table(doc, table_rows)
             table_rows = []
@@ -399,13 +413,12 @@ def parse_markdown(doc: Document, path: Path, first_h1: bool) -> None:
             index += 1
             continue
 
-        flush_bullets()
-        flush_table()
-        add_body(doc, line.strip())
+        paragraph_lines.append(line.strip())
         index += 1
 
     flush_bullets()
     flush_table()
+    flush_paragraph()
     if in_code:
         add_code(doc, code_lines)
 
