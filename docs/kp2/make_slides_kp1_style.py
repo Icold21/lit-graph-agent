@@ -710,6 +710,87 @@ def slide_analogs(prs, blank):
     return slide
 
 
+def slide_example(prs, blank):
+    slide = prs.slides.add_slide(blank)
+    add_background(slide)
+    section(slide, "Реальный пример", TEAL)
+    heading(slide, "Vault: граф и концепты", 40)
+
+    graph = ASSETS / "obsidian_graph_example.png"
+    if graph.exists():
+        slide.shapes.add_picture(str(graph), Inches(0.60), Inches(1.55), width=Inches(7.10))
+    textbox(
+        slide,
+        0.65,
+        5.62,
+        7.2,
+        0.25,
+        "фрагмент: 43 узла, 42 связи",
+        14,
+        SOFT,
+    )
+
+    cards = [
+        (
+            "Mechanistic interpretability",
+            "Разбор внутренних механизмов модели на понятные компоненты.",
+            "weight 1.0 · 3 источника",
+            PALE_TEAL,
+            TEAL,
+        ),
+        (
+            "Induction head (IH)",
+            "Компонент, который учится на контексте и копирует паттерны.",
+            "weight 0.2 · 1 источник",
+            PALE_PURPLE,
+            PURPLE,
+        ),
+        (
+            "Sparse autoencoder",
+            "Разреженное представление активаций для поиска признаков.",
+            "weight 0.2 · 1 источник",
+            PALE_BLUE,
+            BLUE,
+        ),
+    ]
+    for index, (title, body, footer_text, pale, accent) in enumerate(cards):
+        y = 1.55 + index * 1.44
+        shadow_card(slide, 8.20, y, 4.40, 1.34, fill=pale, line=accent, radius=0.10)
+        textbox(slide, 8.42, y + 0.08, 3.95, 0.30, title, 18, accent, True)
+        textbox(slide, 8.42, y + 0.38, 3.95, 0.60, body, 14, MUTED, line_spacing=1.0)
+        textbox(slide, 8.42, y + 1.06, 3.95, 0.20, footer_text, 14, SOFT)
+
+    shadow_card(slide, 0.75, 5.95, 11.83, 0.55, fill=PALE_TEAL, line=TEAL, radius=0.12)
+    textbox(
+        slide,
+        1.0,
+        6.07,
+        11.3,
+        0.28,
+        "8 источников → 57 концептов → 65 узлов, 62 связи · QA: 0 errors",
+        18,
+        INK,
+        True,
+    )
+    textbox(
+        slide,
+        0.78,
+        6.60,
+        11.8,
+        0.25,
+        "Определения — из Concepts/*.md; граф построен по реальным [[wikilinks]].",
+        14,
+        SOFT,
+    )
+    footer(slide, 9)
+    notes(
+        slide,
+        "Это реальный vault, не макет: 8 источников, 57 концептов, 65 узлов, 62 связи. "
+        "Слева — крупнейшая компонента графа, справа — три concept hub с определениями.",
+    )
+    return slide
+
+
 def slide_risks(prs, blank):
     slide = prs.slides.add_slide(blank)
     add_background(slide)
@@ -762,7 +843,7 @@ def slide_risks(prs, blank):
     )
 
     textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков, честный бенчмарк.", 14, SOFT)
-    footer(slide, 9)
+    footer(slide, 10)
     notes(slide, "1:40–1:55. Главный риск — узкая оценка, а не архитектура. До финала расширяем выборку и добавляем E2E-метрики.")
     return slide
 
@@ -807,7 +888,7 @@ def slide_team(prs, blank):
 
     shadow_card(slide, 0.75, 6.05, 11.85, 0.55, fill=CARD, line=BORDER, radius=0.14)
     textbox(slide, 1.0, 6.16, 11.3, 0.3, "github.com/Icold21/lit-graph-agent · MIT License · команда AI-RIldium", 10.5, INK, True, align=PP_ALIGN.CENTER)
-    footer(slide, 10)
+    footer(slide, 11)
     notes(slide, "1:55–2:00. Готовность к КП2 — 8 из 10. До декабря — глубина оценки и коммиты каждого участника.")
     return slide
 
@@ -826,6 +907,7 @@ def build() -> Path:
     slide_metrics(prs, blank)
     slide_reference(prs, blank)
     slide_analogs(prs, blank)
+    slide_example(prs, blank)
     slide_risks(prs, blank)
     slide_team(prs, blank)
 
