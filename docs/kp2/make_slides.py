@@ -301,19 +301,21 @@ def build() -> Path:
     add_textbox(
         slide,
         0.7,
-        6.35,
+        6.22,
         7.2,
-        0.55,
+        0.70,
         "Exact — нормализованное равенство; relaxed — token Jaccard ≥ 0.5.\n"
-        "Опорные: пустое — 0; qwen2.5:3b — 0.345/0.464; oracle — 1.0; SciERC SOTA — 73.4 (др. задача).",
-        9,
+        "Опорные: пустое — 0; qwen2.5:3b — 0.345/0.464; oracle — 1.0.\n"
+        "Аналоги SciERC: SciIE 64.2/39.3, PL-Marker 69.9/53.2, SURE 73.4/56.9 — span NER/RE, не сравнивать.",
+        8.5,
         MUTED,
     )
     footer(slide, 5)
     notes(
         slide,
         "1:15–1:40. SciERC: 20 абстрактов, две локальные модели, ноль падений. На 4B с промптом v2 F1 концептов 0.422 exact "
-        "и 0.583 relaxed; без Generic-сущностей relaxed F1 0.629. Плюс 55 тестов и CI на четырёх версиях Python.",
+        "и 0.583 relaxed; без Generic-сущностей relaxed F1 0.629. Аналоги SciERC — span NER/RE, "
+        "поэтому прямое сравнение некорректно. Плюс 55 тестов и CI на четырёх версиях Python.",
     )
 
     # 6. Changes and risks

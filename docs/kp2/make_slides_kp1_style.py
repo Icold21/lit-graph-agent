@@ -628,6 +628,88 @@ def slide_reference(prs, blank):
     return slide
 
 
+def slide_analogs(prs, blank):
+    slide = prs.slides.add_slide(blank)
+    add_background(slide)
+    section(slide, "Аналоги и ориентиры", PURPLE)
+    heading(slide, "Аналоги на SciERC", 40)
+
+    rows = [
+        ("Модель", "Entity F1", "Relation F1", "Strict Rel F1"),
+        ("SciIE, 2018", "64.2", "39.3", "—"),
+        ("DyGIE++, 2019", "67.5", "48.4", "—"),
+        ("SpERT, 2019", "70.3", "50.8", "—"),
+        ("PL-Marker, 2022", "69.9", "53.2", "41.6"),
+        ("SURE, 2025", "73.4", "56.9", "44.3"),
+    ]
+    shape = slide.shapes.add_table(len(rows), 4, Inches(0.75), Inches(1.65), Inches(7.45), Inches(3.05))
+    table = shape.table
+    widths = [2.35, 1.65, 1.75, 1.70]
+    for index, width in enumerate(widths):
+        table.columns[index].width = Inches(width)
+    for row_index, row in enumerate(rows):
+        for col_index, value in enumerate(row):
+            cell = table.cell(row_index, col_index)
+            cell.text = value
+            cell.margin_left = Inches(0.10)
+            cell.margin_right = Inches(0.10)
+            cell.margin_top = Inches(0.04)
+            cell.margin_bottom = Inches(0.04)
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            paragraph = cell.text_frame.paragraphs[0]
+            paragraph.alignment = PP_ALIGN.LEFT if col_index == 0 else PP_ALIGN.CENTER
+            for run in paragraph.runs:
+                run.font.name = FONT
+                run.font.size = Pt(14)
+                run.font.bold = row_index == 0 or col_index == 0
+                run.font.color.rgb = WHITE if row_index == 0 else INK
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = PURPLE if row_index == 0 else (CARD if row_index % 2 else CARD_ALT)
+    no_shadow(shape)
+
+    shadow_card(slide, 8.45, 1.65, 4.10, 3.05, fill=PALE_PURPLE, line=PURPLE, radius=0.10)
+    textbox(slide, 8.70, 1.80, 3.6, 0.3, "Наш результат", 18, PURPLE, True)
+    textbox(slide, 8.70, 2.15, 3.6, 0.55, "0.629", 40, PURPLE, True, font=FONT_BOLD)
+    textbox(slide, 8.70, 2.72, 3.6, 0.25, "content relaxed F1", 14, MUTED)
+    textbox(slide, 8.70, 3.05, 3.6, 0.35, "0.422 exact / 0.583 relaxed", 18, INK, True)
+    textbox(slide, 8.70, 3.48, 3.6, 0.55, "qwen3.5:4b · 20 абстрактов\n0 падений", 14, SOFT, line_spacing=1.1)
+    pill(slide, 8.70, 4.15, 2.75, 0.34, "ДРУГАЯ ЗАДАЧА", AMBER, WHITE, 14)
+
+    shadow_card(slide, 0.75, 4.95, 11.83, 1.25, fill=PALE_AMBER, line=AMBER, radius=0.10)
+    textbox(slide, 1.0, 5.08, 11.3, 0.3, "Почему напрямую нельзя", 18, AMBER, True)
+    bullet_list(
+        slide,
+        1.0,
+        5.43,
+        11.1,
+        0.7,
+        [
+            "Аналоги — span-level NER/RE, обучены на SciERC и предсказывают типы отношений.",
+            "У нас — zero-shot LLM, канонические концепты, concept matching; 20 абстрактов, один seed.",
+        ],
+        size=14,
+        marker_color=AMBER,
+    )
+    textbox(
+        slide,
+        0.78,
+        6.38,
+        11.8,
+        0.35,
+        "Числа аналогов — из опубликованных таблиц; протоколы могут отличаться.",
+        14,
+        SOFT,
+    )
+    footer(slide, 8)
+    notes(
+        slide,
+        "Аналоги SciERC — span-level NER/RE; наши числа — concept F1. Прямое сравнение некорректно: "
+        "другая задача, другое обучение, другой матчинг. Link prediction: FB15k-237 MRR ~0.42, "
+        "WN18RR ~0.58–0.61, OGB wikikg2 0.739 — отдельный класс задач.",
+    )
+    return slide
+
+
 def slide_risks(prs, blank):
     slide = prs.slides.add_slide(blank)
     add_background(slide)
@@ -680,7 +762,7 @@ def slide_risks(prs, blank):
     )
 
     textbox(slide, 0.78, 5.05, 7.5, 0.5, "Изменения: LangGraph, LLM-выбор движков, честный бенчмарк.", 14, SOFT)
-    footer(slide, 8)
+    footer(slide, 9)
     notes(slide, "1:40–1:55. Главный риск — узкая оценка, а не архитектура. До финала расширяем выборку и добавляем E2E-метрики.")
     return slide
 
@@ -725,7 +807,7 @@ def slide_team(prs, blank):
 
     shadow_card(slide, 0.75, 6.05, 11.85, 0.55, fill=CARD, line=BORDER, radius=0.14)
     textbox(slide, 1.0, 6.16, 11.3, 0.3, "github.com/Icold21/lit-graph-agent · MIT License · команда AI-RIldium", 10.5, INK, True, align=PP_ALIGN.CENTER)
-    footer(slide, 9)
+    footer(slide, 10)
     notes(slide, "1:55–2:00. Готовность к КП2 — 8 из 10. До декабря — глубина оценки и коммиты каждого участника.")
     return slide
 
@@ -743,6 +825,7 @@ def build() -> Path:
     slide_works(prs, blank)
     slide_metrics(prs, blank)
     slide_reference(prs, blank)
+    slide_analogs(prs, blank)
     slide_risks(prs, blank)
     slide_team(prs, blank)
 

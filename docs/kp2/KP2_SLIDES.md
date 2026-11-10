@@ -41,7 +41,7 @@
 
 ## Слайд 5. Качество: первые метрики
 
-![Метрики SciERC](assets/metrics_qwen3.5-4b.png)
+![Метрики SciERC](assets/metrics_qwen3.5-4b-prompt8.png)
 
 SciERC, 20 абстрактов, `qwen3.5:4b`, `seed=42`, 0 падений.
 
@@ -54,9 +54,23 @@ SciERC, 20 абстрактов, `qwen3.5:4b`, `seed=42`, 0 падений.
 На `qwen2.5:3b`: F1 0.345 exact / 0.464 relaxed / 0.512 content relaxed.
 Предыдущий промпт на 4B: 0.349 / 0.501 / 0.549.
 
-Опорные точки: пустое предсказание — 0; oracle — 1.0; SciERC SOTA —
-entity 73.4 / relation 56.9 / strict 44.3, но это span-level NER/RE, другая
-постановка.
+Опорные точки: пустое предсказание — 0; oracle — 1.0.
+
+**Аналоги SciERC** (span-level NER/RE, не наш concept F1):
+
+| Модель | Entity F1 | Relation F1 | Strict Rel F1 |
+| --- | ---: | ---: | ---: |
+| SciIE, 2018 | 64.2 | 39.3 | — |
+| DyGIE++, 2019 | 67.5 | 48.4 | — |
+| SpERT, 2019 | 70.3 | 50.8 | — |
+| PL-Marker, 2022 | 69.9 | 53.2 | 41.6 |
+| SURE, 2025 | 73.4 | 56.9 | 44.3 |
+
+Прямое сравнение некорректно: аналоги обучены на SciERC, предсказывают
+границы спанов и типы отношений, а мы оцениваем канонические концепты
+zero-shot LLM на 20 абстрактах с concept matching. Link prediction
+(`FB15k-237` MRR ~0.42, `WN18RR` ~0.58–0.61, OGB wikikg2 0.739) — тоже
+другая задача.
 
 Плюс: 55 тестов, CI на Python 3.10–3.13, `ruff` без ошибок.
 
